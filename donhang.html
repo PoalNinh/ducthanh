@@ -1,0 +1,3591 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/gh/lelinh014756/fui-toast-js@master/assets/css/toast@1.0.1/fuiToast.min.css">
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/gh/lelinh014756/fui-toast-js@master/assets/js/toast@1.0.1/fuiToast.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Choices.js Customization */
+        .choices__list--multiple .choices__item {
+            background-color: #0ea5e9;
+            border: 1px solid #0ea5e9;
+        }
+
+        .choices__list--multiple .choices__item.is-highlighted {
+            background-color: #0284c7;
+            border: 1px solid #0284c7;
+        }
+
+        .choices__inner {
+            min-height: 44px;
+            background-color: #fff;
+            border-radius: 0.375rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .is-focused .choices__inner,
+        .is-open .choices__inner {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+        }
+
+        .choices__input {
+            background-color: transparent;
+        }
+
+        /* Card hover effect */
+        .hover-card {
+            transition: all 0.3s ease;
+        }
+
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .data-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        .data-table th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+        }
+
+        .data-table td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: #f8fafc;
+            z-index: 5;
+        }
+
+        /* Input focus */
+        .custom-input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+        }
+
+        .animate-fade-out {
+            animation: fadeOut 0.3s ease-out;
+            opacity: 0;
+        }
+
+        #loadingOverlay {
+            z-index: 9999;
+            /* Một số cao hơn so với các modal khác */
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Thông báo gợi ý loại hàng hoá */
+        #loaiHangHoaSuggestion {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .suggestion-highlight {
+            background-color: #fef3c7 !important;
+            border-color: #f59e0b !important;
+        }
+
+        /* Thêm vào phần <style> ở đầu file */
+        .incomplete-row {
+            background-color: #fef2f2 !important;
+            border-color: #fca5a5 !important;
+        }
+
+        .complete-row {
+            background-color: #f0fdf4 !important;
+        }
+
+        .row-warning {
+            border-left: 4px solid #ef4444;
+        }
+
+        .row-success {
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div id="fui-toast"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        class="fixed inset-0 bg-gray-800/70 backdrop-blur-sm z-50 flex justify-center items-center hidden transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center animate-slide-up">
+            <div class="animate-spin text-primary-600 mb-4">
+                <i class="fas fa-circle-notch text-5xl"></i>
+            </div>
+            <p class="text-gray-700 font-medium text-lg" id="loadingText">Đang xử lý...</p>
+        </div>
+    </div>
+
+    <!-- Page Container -->
+    <div class=" mx-auto px-4 py-8 ">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-primary-600 text-white p-3 rounded-lg shadow-lg">
+                        <i class="fas fa-money-bill-wave text-xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-800">Đơn hàng</h1>
+                </div>
+
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <button id="importBtn"
+                        class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+                        <i class="fas fa-file-import"></i>
+                        <span>Nhập dữ liệu</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="mt-8 mb-4">
+                <div class="flex items-center justify-between w-full max-w-4xl mx-auto">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-primary-600 text-white flex items-center justify-center rounded-full">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <span class="mt-2 text-sm font-medium text-gray-700">Khai báo</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2">
+                        <div class="h-1 bg-primary-500" style="width: 0%;" id="progress1"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-gray-300 text-gray-600 flex items-center justify-center rounded-full"
+                            id="step2">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <span class="mt-2 text-sm font-medium text-gray-500">Hàng hóa</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-200 mx-2">
+                        <div class="h-1 bg-primary-500" style="width: 0%;" id="progress2"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-gray-300 text-gray-600 flex items-center justify-center rounded-full"
+                            id="step3">
+                            <i class="fas fa-save"></i>
+                        </div>
+                        <span class="mt-2 text-sm font-medium text-gray-500">Lưu trữ</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Form nhập liệu thông tin đơn hàng -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 hover-card animate-fade-in">
+                <div class="flex items-center border-b border-gray-200 pb-4 mb-5">
+                    <div class="bg-primary-100 text-primary-700 p-2 rounded-lg mr-3">
+                        <i class="fas fa-file-invoice text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-800">Thông tin đơn hàng</h2>
+                </div>
+
+                <form id="donHangForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Mã đơn hàng</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-barcode text-gray-400"></i>
+                            </div>
+                            <input type="text" id="maDonHang"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Tên đơn hàng <span
+                                class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-file-signature text-gray-400"></i>
+                            </div>
+                            <input type="text" id="tenDonHang"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Thay thế phần select khách hàng hiện tại bằng div này -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Khách hàng <span
+                                class="text-red-500">*</span></label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <select id="khachHang" class="choices-select" required>
+                                    <option value="">-- Chọn khách hàng --</option>
+                                </select>
+                            </div>
+                            <button type="button" id="btnThemKhachHang"
+                                class="px-3 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Nguồn khách hàng</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="fas fa-filter text-gray-400"></i>
+                                </div>
+                                <select id="nguonKhachHang"
+                                    class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white appearance-none">
+                                    <option value="">-- Chọn nguồn --</option>
+                                    <option value="Khách mới từ QC">Khách mới từ QC</option>
+                                    <option value="Khách cũ quay lại">Khách cũ quay lại</option>
+                                    <option value="Khách tự tìm">Khách tự tìm</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
+                            <input type="text" id="nguonKhachHangKhac"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white hidden"
+                                placeholder="Nhập nguồn khách hàng khác">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Người phụ trách</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <select id="nguoiPhuTrach" class="choices-select">
+                                    <option value="">-- Chọn nhân viên --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Ngày đặt hàng <span
+                                class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            </div>
+                            <input type="date" id="ngayDatHang"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Ngày hạch toán</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-calendar-check text-gray-400"></i>
+                            </div>
+                            <input type="date" id="ngayHachToan"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Giá sản xuất tạm tính</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-industry text-gray-400"></i>
+                            </div>
+                            <input type="number" id="giaSanXuatTamTinh"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <span class="text-gray-500 text-sm">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Tổng tiền hàng</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-money-bill-wave text-gray-400"></i>
+                            </div>
+                            <input type="text" id="tongTienHang"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white"
+                                readonly>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <span class="text-gray-500 text-sm">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Tổng giá trị đơn</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="fas fa-coins text-gray-400"></i>
+                            </div>
+                            <input type="text" id="tongGiaTriDon"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white font-bold text-lg"
+                                readonly>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <span class="text-gray-500 text-sm">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group lg:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>
+                        <div class="relative">
+                            <div class="absolute top-3 left-3 pointer-events-none">
+                                <i class="fas fa-sticky-note text-gray-400"></i>
+                            </div>
+                            <textarea id="ghiChu" rows="1"
+                                class="custom-input w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-4 flex justify-end mt-4 space-x-3">
+                        <button type="button" id="resetFormBtn"
+                            class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center">
+                            <i class="fas fa-redo-alt mr-2"></i> Làm mới
+                        </button>
+                        <button type="button" id="btnTaoChiTiet"
+                            class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-lg hover:from-amber-600 hover:to-yellow-700 shadow-md hover:shadow-lg transition duration-200 flex items-center">
+                            <i class="fas fa-table mr-2"></i> Tạo hàng hóa
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Bảng chi tiết hàng hóa -->
+            <div id="chiTietSection" class="bg-white p-6 rounded-xl shadow-md mb-8 hidden animate-fade-in">
+                <div class="flex items-center border-b border-gray-200 pb-4 mb-5">
+                    <div class="bg-primary-100 text-primary-700 p-2 rounded-lg mr-3">
+                        <i class="fas fa-table-list text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-800">Chi tiết hàng hóa</h2>
+                </div>
+
+                <div class="table-container rounded-lg border border-gray-200 mb-5">
+                    <!-- Bảng chi tiết đơn giản hóa -->
+                    <table id="chiTietTable" class="data-table min-w-full bg-white">
+                        <!-- Thay thế phần thead của bảng -->
+                        <thead id="chiTietTableHead">
+                            <tr>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0 w-10">
+                                    <i class="fas fa-edit text-gray-400"></i>
+                                </th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Tên hàng hoá</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Đơn vị tính</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Số lượng</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Đơn giá</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Thành tiền</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    VAT</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0">
+                                    Tổng giá trị</th>
+                                <th
+                                    class="py-3 px-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 font-medium text-gray-700 sticky top-0 w-10">
+                                    <i class="fas fa-trash text-gray-400"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="chiTietTableBody">
+                            <!-- Rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <span id="dataStatusText" class="text-sm text-gray-500 self-center mr-auto"></span>
+                    <button type="button" id="cancelBtn"
+                        class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center">
+                        <i class="fas fa-times mr-2"></i> Hủy
+                    </button>
+                    <button type="button" id="saveAll"
+                        class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg hover:from-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg transition duration-200 flex items-center">
+                        <i class="fas fa-save mr-2"></i> Lưu tất cả
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Thêm Khách Hàng -->
+    <div id="khachHangModal" class="fixed inset-0 bg-gray-800/70 backdrop-blur-sm z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 sm:p-0">
+            <div class="relative w-full max-w-4xl p-6 mx-auto my-8 bg-white rounded-2xl shadow-xl">
+                <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Thêm khách hàng mới</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeKhachHangModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="khachHangForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã khách hàng</label>
+                        <input type="text" id="maKhachHang" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng đầy đủ <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" id="tenKhachHangDayDu" class="w-full p-2 border border-gray-300 rounded-lg"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng viết tắt</label>
+                        <input type="text" id="tenKhachHangVietTat"
+                            class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại khách hàng</label>
+                        <select id="loaiKhachHang" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="Cá nhân">Cá nhân</option>
+                            <option value="Doanh nghiệp">Doanh nghiệp</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ Hoá đơn</label>
+                        <textarea id="diaChiHoaDon" class="w-full p-2 border border-gray-300 rounded-lg"
+                            rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ trả hàng</label>
+                        <textarea id="diaChiTraHang" class="w-full p-2 border border-gray-300 rounded-lg"
+                            rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã số thuế</label>
+                        <input type="text" id="maSoThue" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span
+                                class="text-red-500">*</span></label>
+                        <input type="tel" id="soDienThoai" class="w-full p-2 border border-gray-300 rounded-lg"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                        <textarea id="ghiChuKhachHang" class="w-full p-2 border border-gray-300 rounded-lg"
+                            rows="2"></textarea>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end space-x-3 pt-4">
+                        <button type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            onclick="closeKhachHangModal()">
+                            Huỷ bỏ
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                            Lưu khách hàng
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chi Tiết Hàng Hóa -->
+    <!-- Thay thế phần modal chi tiết hàng hóa hiện tại bằng đoạn code sau -->
+    <div id="hangHoaDetailModal" class="fixed inset-0 bg-gray-800/70 backdrop-blur-sm z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 sm:p-0">
+            <div class="relative w-full max-w-4xl p-6 mx-auto my-8 bg-white rounded-2xl shadow-xl">
+                <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Chi tiết hàng hóa</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeHangHoaDetailModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form id="hangHoaDetailForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên hàng hoá <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" id="modalTenHangHoa" class="w-full p-2 border border-gray-300 rounded-lg"
+                            required>
+                    </div>
+
+                    <!-- Thay thế trường Loại hàng hoá hiện tại -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại hàng hoá</label>
+                        <select id="modalLoaiHangHoa" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">-- Chọn --</option>
+                            <option value="Decal">Decal</option>
+                            <option value="Túi giấy">Túi giấy</option>
+                            <option value="Tờ gấp">Tờ gấp</option>
+                            <option value="Hộp giấy">Hộp giấy</option>
+                            <option value="Hộp cứng">Hộp cứng</option>
+                            <option value="Tờ rơi">Tờ rơi</option>
+                            <option value="Catalogue">Catalogue</option>
+                            <option value="Voucher">Voucher</option>
+                            <option value="Thiệp">Thiệp</option>
+                            <option value="Phong bì">Phong bì</option>
+                            <option value="Poster">Poster</option>
+                            <option value="Hoá đơn">Hoá đơn</option>
+                            <option value="Thùng Carton">Thùng Carton</option>
+                            <option value="Formex">Formex</option>
+                            <option value="Bạt">Bạt</option>
+                            <option value="Decal PP">Decal PP</option>
+                            <option value="PVC">PVC</option>
+                            <option value="PTK">PTK</option>
+                            <option value="Standee">Standee</option>
+                            <option value="Mica">Mica</option>
+                            <option value="Thẻ nhựa">Thẻ nhựa</option>
+                            <option value="Tag treo">Tag treo</option>
+                            <option value="Hashtag">Hashtag</option>
+                            <option value="custom">Khác...</option>
+                        </select>
+                        <input type="text" id="modalLoaiHangHoaCustom"
+                            class="w-full p-2 border border-gray-300 rounded-lg mt-1 hidden"
+                            placeholder="Nhập loại hàng hoá">
+                    </div>
+
+                    <!-- Thay thế trường Đơn vị tính hiện tại -->
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
+                        <select id="modalDonViTinh" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="">-- Chọn --</option>
+                            <option value="Chiếc">Chiếc</option>
+                            <option value="Tờ">Tờ</option>
+                            <option value="Thành phẩm">Thành phẩm</option>
+                            <option value="Gói">Gói</option>
+                            <option value="Bộ">Bộ</option>
+                            <option value="Hộp">Hộp</option>
+                            <option value="Tấm">Tấm</option>
+                            <option value="Quyển">Quyển</option>
+                            <option value="kg">kg</option>
+                            <option value="custom">Khác...</option>
+                        </select>
+                        <input type="text" id="modalDonViTinhCustom"
+                            class="w-full p-2 border border-gray-300 rounded-lg mt-1 hidden"
+                            placeholder="Nhập đơn vị tính">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                        <input type="number" id="modalSoLuong" class="w-full p-2 border border-gray-300 rounded-lg"
+                            min="0" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá</label>
+                        <input type="number" id="modalDonGia" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Thành tiền hàng</label>
+                        <input type="text" id="modalThanhTienHang"
+                            class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phụ phí điều chỉnh</label>
+                        <input type="number" id="modalPhuPhiDieuChinh"
+                            class="w-full p-2 border border-gray-300 rounded-lg" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá điều chỉnh</label>
+                        <input type="text" id="modalDonGiaDieuChinh"
+                            class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Thành tiền sau điều chỉnh</label>
+                        <input type="text" id="modalThanhTienSauDieuChinh"
+                            class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Thuế suất (%)</label>
+                        <select id="modalThueSuat" class="w-full p-2 border border-gray-300 rounded-lg">
+                            <option value="10" selected>10%</option>
+                            <option value="8">8%</option>
+                            <option value="0">0%</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tiền thuế</label>
+                        <input type="text" id="modalTienThue"
+                            class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phí suất quản lý điều chỉnh
+                            (%)</label>
+                        <input type="text" id="modalPhiQuanLy" class="w-full p-2 border border-gray-300 rounded-lg"
+                            value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tiền hoàn trả cho khách</label>
+                        <input type="text" id="modalTienHoanTra" class="w-full p-2 border border-gray-300 rounded-lg"
+                            value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tổng giá trị</label>
+                        <input type="text" id="modalTongGiaTri"
+                            class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                        <textarea id="modalGhiChu" class="w-full p-2 border border-gray-300 rounded-lg"
+                            rows="1"></textarea>
+                    </div>
+
+                    <div class="form-group lg:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                        <textarea id="modalMoTa" class="w-full p-2 border border-gray-300 rounded-lg"
+                            rows="5"></textarea>
+                    </div>
+
+                    <div class="lg:col-span-3 flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                        <button type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            onclick="closeHangHoaDetailModal()">
+                            Huỷ bỏ
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                            Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm thư viện SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://hoangmv.github.io/ducthanh/key.js"></script>
+
+    <script>
+        // Class chính quản lý đơn hàng
+        class OrderManager {
+            // Add this function to the OrderManager class
+            getUrlParameter(name) {
+                name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+                const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+                const results = regex.exec(location.search);
+                return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+            }
+
+            // Thêm ánh xạ tên hàng hoá với loại hàng hoá
+            getLoaiHangHoaMapping() {
+                return {
+                    // Decal và in ấn
+                    'decal': 'Decal',
+                    'tem decal': 'Decal',
+                    'sticker': 'Decal',
+                    'nhãn dán': 'Decal',
+
+                    // Túi giấy
+                    'túi giấy': 'Túi giấy',
+                    'túi kraft': 'Túi giấy',
+                    'túi shopping': 'Túi giấy',
+
+                    // Tờ gấp và brochure
+                    'tờ gấp': 'Tờ gấp',
+                    'brochure': 'Tờ gấp',
+                    'leaflet': 'Tờ gấp',
+
+                    // Hộp giấy
+                    'hộp giấy': 'Hộp giấy',
+                    'hộp carton': 'Hộp giấy',
+                    'hộp đựng': 'Hộp giấy',
+
+                    // Hộp cứng
+                    'hộp cứng': 'Hộp cứng',
+                    'hộp nam châm': 'Hộp cứng',
+                    'hộp quà': 'Hộp cứng',
+
+                    // Tờ rơi
+                    'tờ rơi': 'Tờ rơi',
+                    'flyer': 'Tờ rơi',
+                    'quảng cáo': 'Tờ rơi',
+
+                    // Catalogue
+                    'catalogue': 'Catalogue',
+                    'catalog': 'Catalogue',
+                    'sách giới thiệu': 'Catalogue',
+
+                    // Voucher
+                    'voucher': 'Voucher',
+                    'phiếu giảm giá': 'Voucher',
+                    'coupon': 'Voucher',
+
+                    // Thiệp
+                    'thiệp': 'Thiệp',
+                    'thiệp mời': 'Thiệp',
+                    'name card': 'Thiệp',
+                    'card visit': 'Thiệp',
+
+                    // Phong bì
+                    'phong bì': 'Phong bì',
+                    'envelope': 'Phong bì',
+
+                    // Poster
+                    'poster': 'Poster',
+                    'áp phích': 'Poster',
+
+                    // Hoá đơn
+                    'hoá đơn': 'Hoá đơn',
+                    'hóa đơn': 'Hoá đơn',
+                    'bill': 'Hoá đơn',
+
+                    // Thùng Carton
+                    'thùng carton': 'Thùng Carton',
+                    'thùng giấy': 'Thùng Carton',
+                    'thùng đựng': 'Thùng Carton',
+
+                    // Formex
+                    'formex': 'Formex',
+                    'tấm formex': 'Formex',
+
+                    // Bạt
+                    'bạt': 'Bạt',
+                    'banner': 'Bạt',
+                    'băng rôn': 'Bạt',
+
+                    // Decal PP
+                    'decal pp': 'Decal PP',
+                    'pp decal': 'Decal PP',
+
+                    // PVC
+                    'pvc': 'PVC',
+                    'tấm pvc': 'PVC',
+
+                    // PTK
+                    'ptk': 'PTK',
+
+                    // Standee
+                    'standee': 'Standee',
+                    'x-banner': 'Standee',
+
+                    // Mica
+                    'mica': 'Mica',
+                    'tấm mica': 'Mica',
+                    'acrylic': 'Mica',
+
+                    // Thẻ nhựa
+                    'thẻ nhựa': 'Thẻ nhựa',
+                    'card nhựa': 'Thẻ nhựa',
+                    'thẻ từ': 'Thẻ nhựa',
+
+                    // Tag treo
+                    'tag treo': 'Tag treo',
+                    'nhãn treo': 'Tag treo',
+
+                    // Hashtag
+                    'hashtag': 'Hashtag',
+                    'tag': 'Hashtag'
+                };
+            }
+
+            // Hàm tự động gợi ý loại hàng hoá dựa trên tên
+            suggestLoaiHangHoa(tenHangHoa) {
+                if (!tenHangHoa) return '';
+
+                const mapping = this.getLoaiHangHoaMapping();
+                const tenLower = tenHangHoa.toLowerCase().trim();
+
+                // Tìm kiếm chính xác trước
+                if (mapping[tenLower]) {
+                    return mapping[tenLower];
+                }
+
+                // Tìm kiếm theo từ khóa có trong tên
+                for (const [keyword, loai] of Object.entries(mapping)) {
+                    if (tenLower.includes(keyword) || keyword.includes(tenLower)) {
+                        return loai;
+                    }
+                }
+
+                return ''; // Không tìm thấy
+            }
+
+            // Add this property to the constructor
+            // In the OrderManager class, add a new property to store employee list
+            constructor(appId, accessKey) {
+                this.appId = appId;
+                this.accessKey = accessKey;
+                this.donHangData = null;
+                this.hangHoaList = [];
+                this.khachHangList = [];
+                this.nhanVienList = []; // Add this line
+                this.currentEditingRow = null;
+
+                // Get employee name from URL
+                this.employeeName = this.getUrlParameter('nhanvien');
+
+                // Thêm modals vào DOM
+                document.body.insertAdjacentHTML('beforeend', this.importModalHTML);
+
+                this.init();
+            }
+
+            // Add this to the init() method
+            async init() {
+                try {
+                    this.showLoading('Đang khởi tạo...');
+
+                    // Kiểm tra kết nối API
+                    const isConnected = await this.testAppSheetConnection();
+                    if (!isConnected) {
+                        throw new Error('Không thể kết nối đến AppSheet API');
+                    }
+
+                    // Display employee name if present
+                    if (this.employeeName) {
+                        const headerDiv = document.querySelector('header div.flex.items-center.space-x-4');
+                        if (headerDiv) {
+                            const userInfoElement = document.createElement('div');
+                            userInfoElement.className = 'ml-auto text-sm text-gray-600';
+                            userInfoElement.innerHTML = `<i class="fas fa-user mr-1"></i> ${this.employeeName}`;
+                            headerDiv.appendChild(userInfoElement);
+                        }
+                    }
+
+                    // Thiết lập các giá trị ban đầu
+                    this.setupEventListeners();
+                    this.generateNewOrderCode();
+                    this.setDefaultDate();
+                    this.setDefaultDate1();
+
+                    // Load data in parallel
+                    await Promise.all([
+                        this.loadKhachHangList(),
+                        this.loadNhanVienList()
+                    ]);
+
+                    // Set the employee from URL parameter as the selected value in the dropdown
+                    this.setEmployeeFromUrl();
+
+                    this.updateProgressSteps(1);
+
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('Lỗi khởi tạo:', error);
+                    this.hideLoading();
+                    this.showAlert('error', 'Lỗi khởi tạo', 'Đã xảy ra lỗi khi khởi tạo ứng dụng. Vui lòng thử lại sau.');
+                }
+            }
+
+
+            // Add this new method to set the employee from URL
+            setEmployeeFromUrl() {
+                if (this.employeeName && this.nhanVienChoices) {
+                    // Find the employee ID that matches the name from URL
+                    const foundEmployee = this.nhanVienList.find(nv =>
+                        nv['Tên nhân viên'] === this.employeeName ||
+                        (nv['Mã nhân viên'] && nv['Mã nhân viên'] + ' - ' + nv['Tên nhân viên'] === this.employeeName)
+                    );
+
+                    if (foundEmployee) {
+                        const employeeId = foundEmployee['ID nhân viên'] || foundEmployee.ID;
+                        // Set the selected value in the dropdown
+                        this.nhanVienChoices.setChoiceByValue(employeeId);
+                        console.log('Set employee from URL:', this.employeeName, 'ID:', employeeId);
+                    } else {
+                        console.log('Employee not found in list:', this.employeeName);
+                    }
+                }
+            }
+
+            // Kiểm tra kết nối API
+            async testAppSheetConnection() {
+                try {
+                    this.showLoading('Đang kết nối...');
+
+                    const response = await axios({
+                        method: 'POST',
+                        url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Khách hàng/Action`,
+                        headers: {
+                            'ApplicationAccessKey': this.accessKey,
+                            'Content-Type': 'application/json'
+                        },
+                        data: {
+                            "Action": "Find",
+                            "Properties": {
+
+                                "Selector": "Select(Khách hàng)"
+                            }
+                        }
+                    });
+
+                    this.hideLoading();
+
+                    if (response.status === 200) {
+                        console.log('Kết nối API thành công:', response);
+                        return true;
+                    } else {
+                        throw new Error('Phản hồi không thành công');
+                    }
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Lỗi kết nối API:', error);
+
+                    let errorMessage = 'Không thể kết nối đến AppSheet API.';
+                    if (error.response) {
+                        errorMessage += ` Status: ${error.response.status}. ${error.response.data?.error || ''}`;
+                    }
+
+                    this.showAlert('error', 'Lỗi kết nối!', errorMessage);
+                    return false;
+                }
+            }
+            copyRow(button) {
+                const row = button.closest('tr');
+                if (!row) return;
+
+                // Clone the entire row
+                const newRow = row.cloneNode(true);
+                newRow.classList.add('animate-fade-in');
+
+                // Insert after the current row
+                row.parentNode.insertBefore(newRow, row.nextSibling);
+
+                // Re-attach event listeners to the new row's inputs
+                const inputs = newRow.querySelectorAll('input');
+                inputs[2].addEventListener('input', () => this.calculateRowValues(newRow));
+                inputs[3].addEventListener('input', () => this.calculateRowValues(newRow));
+
+                // Clear any row ID or unique identifier that might have been cloned
+                // (This would depend on your specific implementation)
+
+                // Update calculations
+                this.calculateRowValues(newRow);
+                this.updateOrderTotals();
+
+                // Highlight the new row briefly
+                newRow.style.backgroundColor = '#e6f7ff';
+                setTimeout(() => {
+                    newRow.style.backgroundColor = '';
+                }, 1000);
+
+                // Scroll to the new row
+                newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Thiết lập các sự kiện
+            setupEventListeners() {
+                // Xử lý nguồn khách hàng
+                document.getElementById('nguonKhachHang').addEventListener('change', (e) => {
+                    const nguonKhachHangKhac = document.getElementById('nguonKhachHangKhac');
+                    if (e.target.value === 'Khác') {
+                        e.target.classList.add('hidden');
+                        nguonKhachHangKhac.classList.remove('hidden');
+                        nguonKhachHangKhac.focus();
+                    }
+                });
+
+                document.getElementById('nguonKhachHangKhac').addEventListener('blur', (e) => {
+                    if (!e.target.value.trim()) {
+                        e.target.classList.add('hidden');
+                        const nguonKhachHang = document.getElementById('nguonKhachHang');
+                        nguonKhachHang.classList.remove('hidden');
+                        nguonKhachHang.value = '';
+                    }
+                });
+
+                // Khởi tạo quản lý dropdown tùy chỉnh
+                this.loaiHangHoaManager = new CustomDropdownManager('modalLoaiHangHoa', 'savedLoaiHangHoa');
+                this.donViTinhManager = new CustomDropdownManager('modalDonViTinh', 'savedDonViTinh');
+
+                // Sự kiện cho dropdowns trong modal
+                document.getElementById('modalDonViTinh').addEventListener('change', function () {
+                    const customInput = document.getElementById('modalDonViTinhCustom');
+                    if (this.value === 'custom') {
+                        customInput.classList.remove('hidden');
+                        customInput.focus();
+                    } else {
+                        customInput.classList.add('hidden');
+                        customInput.value = '';
+                    }
+                });
+
+                document.getElementById('modalLoaiHangHoa').addEventListener('change', function () {
+                    const customInput = document.getElementById('modalLoaiHangHoaCustom');
+                    if (this.value === 'custom') {
+                        customInput.classList.remove('hidden');
+                        customInput.focus();
+                    } else {
+                        customInput.classList.add('hidden');
+                        customInput.value = '';
+                    }
+                });
+
+                // Trong hàm setupEventListeners(), thêm đoạn này:
+
+                // Sự kiện tự động gợi ý loại hàng hoá khi nhập tên hàng hoá
+                document.getElementById('modalTenHangHoa').addEventListener('input', (e) => {
+                    const tenHangHoa = e.target.value;
+                    const suggestedLoai = this.suggestLoaiHangHoa(tenHangHoa);
+
+                    if (suggestedLoai) {
+                        const modalLoaiHangHoa = document.getElementById('modalLoaiHangHoa');
+                        const modalLoaiHangHoaCustom = document.getElementById('modalLoaiHangHoaCustom');
+
+                        // Tìm xem có tùy chọn trùng khớp không
+                        const matchingOption = Array.from(modalLoaiHangHoa.options)
+                            .find(opt => opt.value && opt.value !== 'custom' && opt.textContent === suggestedLoai);
+
+                        if (matchingOption) {
+                            // Chọn tùy chọn có sẵn
+                            modalLoaiHangHoa.value = matchingOption.value;
+                            modalLoaiHangHoaCustom.classList.add('hidden');
+                            modalLoaiHangHoaCustom.value = '';
+                        } else {
+                            // Sử dụng tùy chọn tùy chỉnh
+                            modalLoaiHangHoa.value = 'custom';
+                            modalLoaiHangHoaCustom.value = suggestedLoai;
+                            modalLoaiHangHoaCustom.classList.remove('hidden');
+                        }
+
+                        // Hiển thị thông báo gợi ý
+                        this.showSuggestionNotification(suggestedLoai);
+                    }
+                });
+
+                // Sự kiện giá sản xuất
+                document.getElementById('giaSanXuatTamTinh').addEventListener('input', () => this.updateOrderTotals());
+
+                // Nút thêm khách hàng
+                document.getElementById('btnThemKhachHang').addEventListener('click', () => this.openKhachHangModal());
+
+                // Form khách hàng
+                document.getElementById('khachHangForm').addEventListener('submit', (e) => this.handleThemKhachHang(e));
+
+                // Các nút chức năng
+                document.getElementById('btnTaoChiTiet').addEventListener('click', () => this.addNewRow());
+                document.getElementById('resetFormBtn').addEventListener('click', () => this.confirmResetForm());
+                document.getElementById('cancelBtn').addEventListener('click', () => this.confirmCancelHangHoa());
+                document.getElementById('saveAll').addEventListener('click', () => this.saveDataToAppSheet());
+
+                // Import/Export
+                document.getElementById('importBtn').addEventListener('click', () => this.openImportModal());
+
+                document.getElementById('btnChonFile').addEventListener('click', () => document.getElementById('fileInput').click());
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileSelect(e));
+                document.getElementById('btnTaiMauNhap').addEventListener('click', () => this.downloadImportTemplate());
+                document.getElementById('btnNhapDuLieu').addEventListener('click', () => this.importDataFromExcel());
+
+                // Form chi tiết hàng hóa
+                document.getElementById('hangHoaDetailForm').addEventListener('submit', (e) => this.handleUpdateHangHoa(e));
+
+                // Sự kiện tính toán trong modal
+                ['modalSoLuong', 'modalDonGia', 'modalPhuPhiDieuChinh', 'modalThueSuat', 'modalPhiQuanLy'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => this.calculateModalValues());
+                });
+
+                // Expose window methods for HTML event handlers
+                window.deleteRow = (btn) => this.deleteRow(btn);
+                window.openHangHoaDetail = (btn) => this.openHangHoaDetail(btn);
+                window.closeHangHoaDetailModal = () => this.closeHangHoaDetailModal();
+                window.openKhachHangModal = () => this.openKhachHangModal();
+                window.closeKhachHangModal = () => this.closeKhachHangModal();
+                window.openImportModal = () => this.openImportModal();
+                window.copyRow = (btn) => this.copyRow(btn);
+                window.closeImportModal = () => this.closeImportModal();
+                window.openExportModal = () => this.openExportModal();
+                window.closeExportModal = () => this.closeExportModal();
+                window.exportPrintTemplate = () => this.exportPrintTemplate();
+                window.exportExcelFile = () => this.exportExcelFile();
+            }
+
+            // Hiển thị thông báo gợi ý
+            showSuggestionNotification(suggestedLoai) {
+                // Tạo element thông báo nếu chưa có
+                let notification = document.getElementById('loaiHangHoaSuggestion');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.id = 'loaiHangHoaSuggestion';
+                    notification.className = 'mt-1 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700';
+
+                    // Chèn sau trường Loại hàng hoá
+                    const modalLoaiHangHoaContainer = document.getElementById('modalLoaiHangHoa').closest('.form-group');
+                    modalLoaiHangHoaContainer.appendChild(notification);
+                }
+
+                notification.innerHTML = `
+        <i class="fas fa-lightbulb mr-1"></i>
+        Gợi ý: <strong>${suggestedLoai}</strong>
+        <button type="button" class="ml-2 text-blue-600 hover:text-blue-800 underline" onclick="this.parentElement.style.display='none'">
+            Ẩn
+        </button>
+    `;
+                notification.style.display = 'block';
+
+                // Tự động ẩn sau 5 giây
+                setTimeout(() => {
+                    if (notification) {
+                        notification.style.display = 'none';
+                    }
+                }, 5000);
+            }
+
+            // Lưu ánh xạ tên-loại do người dùng tạo
+            saveUserMapping(tenHangHoa, loaiHangHoa) {
+                if (!tenHangHoa || !loaiHangHoa) return;
+
+                try {
+                    const userMappings = JSON.parse(localStorage.getItem('userHangHoaMappings')) || {};
+                    const key = tenHangHoa.toLowerCase().trim();
+                    userMappings[key] = loaiHangHoa;
+                    localStorage.setItem('userHangHoaMappings', JSON.stringify(userMappings));
+                } catch (error) {
+                    console.error('Lỗi khi lưu ánh xạ người dùng:', error);
+                }
+            }
+
+            // Cập nhật hàm suggestLoaiHangHoa để sử dụng dữ liệu người dùng
+            suggestLoaiHangHoa(tenHangHoa) {
+                if (!tenHangHoa) return '';
+
+                const tenLower = tenHangHoa.toLowerCase().trim();
+
+                // Kiểm tra ánh xạ do người dùng tạo trước
+                try {
+                    const userMappings = JSON.parse(localStorage.getItem('userHangHoaMappings')) || {};
+                    if (userMappings[tenLower]) {
+                        return userMappings[tenLower];
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi đọc ánh xạ người dùng:', error);
+                }
+
+                // Sau đó mới kiểm tra ánh xạ mặc định
+                const mapping = this.getLoaiHangHoaMapping();
+
+                // Tìm kiếm chính xác trước
+                if (mapping[tenLower]) {
+                    return mapping[tenLower];
+                }
+
+                // Tìm kiếm theo từ khóa có trong tên
+                for (const [keyword, loai] of Object.entries(mapping)) {
+                    if (tenLower.includes(keyword) || keyword.includes(tenLower)) {
+                        return loai;
+                    }
+                }
+
+                return ''; // Không tìm thấy
+            }
+
+            // Tạo mã đơn hàng mới
+            generateNewOrderCode() {
+                document.getElementById('maDonHang').value = this.generateMaDonHang();
+            }
+
+            // Thiết lập ngày mặc định
+            setDefaultDate() {
+                document.getElementById('ngayDatHang').value = this.formatDate(new Date());
+            }
+
+            // Thiết lập ngày mặc định
+            setDefaultDate1() {
+                document.getElementById('ngayHachToan').value = this.formatDate(new Date());
+            }
+
+            // Tạo mã đơn hàng
+            generateMaDonHang() {
+                const today = new Date();
+                const year = today.getFullYear().toString().slice(-2); // Lấy 2 số cuối của năm
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                return `${year}${month}${day}`;
+            }
+
+            // Định dạng ngày
+            formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // Định dạng tiền tệ
+            formatCurrency(number) {
+                if (number === null || number === undefined || isNaN(number)) return "0";
+                return new Intl.NumberFormat('vi-VN', {
+                    style: 'decimal',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(number);
+            }
+
+            // Chuyển đổi từ chuỗi tiền về số
+            parseCurrency(currencyString) {
+                if (!currencyString) return 0;
+                return parseFloat(String(currencyString).replace(/\./g, '').replace(/,/g, '.'));
+            }
+
+            // Tạo ID cho hàng hóa
+            generateHangHoaID(maDonHang, index) {
+                return `${maDonHang}-HH${String(index).padStart(3, '0')}`;
+            }
+
+            // Hiển thị loading
+            showLoading(message = 'Đang xử lý...') {
+                const loadingText = document.getElementById('loadingText');
+                const loadingOverlay = document.getElementById('loadingOverlay');
+
+                if (loadingText) loadingText.textContent = message;
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('hidden');
+                    console.log('Loading overlay displayed'); // Debug
+                } else {
+                    console.error('Loading overlay element not found');
+                }
+            }
+
+            // Ẩn loading
+            hideLoading() {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+
+            // Hiển thị thông báo
+            showAlert(icon, title, text = '') {
+                return Swal.fire({
+                    icon,
+                    title,
+                    text,
+                    confirmButtonColor: icon === 'error' ? '#d33' : '#0ea5e9'
+                });
+            }
+
+            // Cập nhật tiến trình
+            updateProgressSteps(step) {
+                if (step >= 1) {
+                    document.getElementById('progress1').style.width = '100%';
+                } else {
+                    document.getElementById('progress1').style.width = '0%';
+                }
+
+                if (step >= 2) {
+                    document.getElementById('step2').classList.remove('bg-gray-300', 'text-gray-600');
+                    document.getElementById('step2').classList.add('bg-primary-600', 'text-white');
+                    document.getElementById('progress2').style.width = '100%';
+                } else {
+                    document.getElementById('step2').classList.add('bg-gray-300', 'text-gray-600');
+                    document.getElementById('step2').classList.remove('bg-primary-600', 'text-white');
+                    document.getElementById('progress2').style.width = '0%';
+                }
+
+                if (step >= 3) {
+                    document.getElementById('step3').classList.remove('bg-gray-300', 'text-gray-600');
+                    document.getElementById('step3').classList.add('bg-primary-600', 'text-white');
+                } else {
+                    document.getElementById('step3').classList.add('bg-gray-300', 'text-gray-600');
+                    document.getElementById('step3').classList.remove('bg-primary-600', 'text-white');
+                }
+            }
+
+            // Tải danh sách khách hàng
+            async loadKhachHangList() {
+                try {
+
+                    const response = await axios({
+                        method: 'POST',
+                        url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Khách hàng/Action`,
+                        headers: {
+                            'ApplicationAccessKey': this.accessKey,
+                            'Content-Type': 'application/json'
+                        },
+                        data: {
+                            "Action": "Find",
+                            "Properties": {
+                                "Locale": "vi-VN",
+                                "Timezone": "Asia/Ho_Chi_Minh",
+                                "Selector": "Filter(Khách hàng, true)"
+                            }
+                        }
+                    });
+
+                    if (response.data && response.data.Rows) {
+                        this.khachHangList = response.data.Rows;
+                    } else if (Array.isArray(response.data)) {
+                        this.khachHangList = response.data;
+                    } else {
+                        console.error('Cấu trúc dữ liệu khách hàng không đúng:', response.data);
+                        this.khachHangList = [];
+                    }
+
+                    // Khởi tạo Choices.js cho select khách hàng
+                    const khachHangSelect = document.getElementById('khachHang');
+                    khachHangSelect.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
+
+                    this.khachHangList.forEach(khachHang => {
+                        const option = document.createElement('option');
+                        option.value = khachHang['ID khách hàng'] || khachHang.ID;
+                        option.textContent = khachHang['Tên khách hàng đầy đủ'] || khachHang.Ten;
+                        khachHangSelect.appendChild(option);
+                    });
+
+                    // Khởi tạo Choices
+                    if (this.khachHangChoices) {
+                        this.khachHangChoices.destroy();
+                    }
+
+                    this.khachHangChoices = new Choices('#khachHang', {
+                        searchEnabled: true,
+                        searchPlaceholderValue: 'Nhập tên để tìm...',
+                        noResultsText: 'Không tìm thấy khách hàng',
+                        itemSelectText: 'Chọn',
+                        removeItemButton: true,
+                        searchFields: ['label'],
+                        position: 'bottom'
+                    });
+
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('Lỗi khi tải danh sách khách hàng:', error);
+                    this.hideLoading();
+                    this.showAlert('error', 'Lỗi kết nối', 'Không thể tải danh sách khách hàng. Vui lòng thử lại sau.');
+                }
+            }
+
+            // Add a method to load employee list
+            async loadNhanVienList() {
+                try {
+                    const response = await axios({
+                        method: 'POST',
+                        url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Nhân viên/Action`,
+                        headers: {
+                            'ApplicationAccessKey': this.accessKey,
+                            'Content-Type': 'application/json'
+                        },
+                        data: {
+                            "Action": "Find",
+                            "Properties": {
+                                "Locale": "vi-VN",
+                                "Timezone": "Asia/Ho_Chi_Minh",
+                                "Selector": "Filter(Nhân viên, true)"
+                            }
+                        }
+                    });
+
+                    if (response.data && response.data.Rows) {
+                        this.nhanVienList = response.data.Rows;
+                    } else if (Array.isArray(response.data)) {
+                        this.nhanVienList = response.data;
+                    } else {
+                        console.error('Cấu trúc dữ liệu nhân viên không đúng:', response.data);
+                        this.nhanVienList = [];
+                    }
+
+                    // Khởi tạo select nhân viên
+                    const nhanVienSelect = document.getElementById('nguoiPhuTrach');
+                    nhanVienSelect.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+
+                    this.nhanVienList.forEach(nhanVien => {
+                        const option = document.createElement('option');
+                        option.value = nhanVien['ID nhân viên'] || nhanVien.ID;
+                        option.textContent = nhanVien['Tên nhân viên'] || nhanVien.Ten;
+                        if (option.textContent) {
+                            // Add mã nhân viên if available
+                            if (nhanVien['Mã nhân viên']) {
+                                option.textContent = `${nhanVien['Mã nhân viên']} - ${option.textContent}`;
+                            }
+                            nhanVienSelect.appendChild(option);
+                        }
+                    });
+
+                    // Khởi tạo Choices
+                    if (this.nhanVienChoices) {
+                        this.nhanVienChoices.destroy();
+                    }
+
+                    this.nhanVienChoices = new Choices('#nguoiPhuTrach', {
+                        searchEnabled: true,
+                        searchPlaceholderValue: 'Nhập tên để tìm...',
+                        noResultsText: 'Không tìm thấy nhân viên',
+                        itemSelectText: 'Chọn',
+                        removeItemButton: true,
+                        searchFields: ['label'],
+                        position: 'bottom'
+                    });
+
+                } catch (error) {
+                    console.error('Lỗi khi tải danh sách nhân viên:', error);
+                    this.showAlert('error', 'Lỗi kết nối', 'Không thể tải danh sách nhân viên. Vui lòng thử lại sau.');
+                }
+            }
+
+            // Xác nhận reset form
+            confirmResetForm() {
+                Swal.fire({
+                    title: 'Xác nhận làm mới',
+                    text: 'Bạn có chắc muốn làm mới toàn bộ form không?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0ea5e9',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.resetForm();
+                    }
+                });
+            }
+
+            // Xác nhận hủy hàng hóa
+            confirmCancelHangHoa() {
+                Swal.fire({
+                    title: 'Xác nhận hủy',
+                    text: 'Bạn có chắc muốn hủy danh sách hàng hóa hiện tại?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0ea5e9',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Không'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('chiTietTableBody').innerHTML = '';
+                        document.getElementById('chiTietSection').classList.add('hidden');
+                        this.updateProgressSteps(1);
+                    }
+                });
+            }
+
+            // Làm mới form
+            resetForm() {
+                // Làm mới form đơn hàng
+                document.getElementById('donHangForm').reset();
+
+                // Tạo mã đơn hàng mới
+                this.generateNewOrderCode();
+
+                // Thiết lập ngày mặc định
+                this.setDefaultDate();
+
+                // Thiết lập ngày mặc định
+                this.setDefaultDate1();
+
+                // Xóa tất cả hàng hóa
+                document.getElementById('chiTietTableBody').innerHTML = '';
+
+                // Ẩn phần chi tiết
+                document.getElementById('chiTietSection').classList.add('hidden');
+
+                // Reset nguồn khách hàng
+                const nguonKhachHang = document.getElementById('nguonKhachHang');
+                const nguonKhachHangKhac = document.getElementById('nguonKhachHangKhac');
+
+                nguonKhachHang.classList.remove('hidden');
+                nguonKhachHang.value = '';
+                nguonKhachHangKhac.classList.add('hidden');
+                nguonKhachHangKhac.value = '';
+
+                // Cập nhật trạng thái tiến trình
+                this.updateProgressSteps(1);
+            }
+
+            // Thêm hàng mới
+            addNewRow() {
+                document.getElementById('chiTietSection').classList.remove('hidden');
+                const tableBody = document.getElementById('chiTietTableBody');
+                const newRow = document.createElement('tr');
+                newRow.classList.add('animate-fade-in');
+
+                // Khởi tạo các giá trị mặc định cho data attributes
+                newRow.dataset.loaiHangHoa = '';
+                newRow.dataset.moTa = '';
+                newRow.dataset.phuPhiDieuChinh = '0';
+                newRow.dataset.donGiaDieuChinh = '0';
+                newRow.dataset.thueSuat = '10';
+                newRow.dataset.phiQuanLy = '0';
+                newRow.dataset.tienHoanTra = '0';
+                newRow.dataset.thanhTien = '0';
+                newRow.dataset.thanhTienSauDieuChinh = '0';
+                newRow.dataset.tienThue = '0';
+                newRow.dataset.tongGiaTri = '0';
+
+                newRow.innerHTML = `
+<td class="py-3 px-4 border-b border-gray-200">
+  <button type="button" class="text-blue-600 hover:text-blue-800" onclick="openHangHoaDetail(this)">
+    <i class="fas fa-edit"></i>
+  </button>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Tên hàng hoá" required>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <select class="w-full p-2 border border-gray-300 rounded-lg unit-select">
+    <option value="">-- Chọn --</option>
+    <option value="Chiếc">Chiếc</option>
+    <option value="Tờ">Tờ</option>
+    <option value="Thành phẩm">Thành phẩm</option>
+    <option value="Gói">Gói</option>
+    <option value="Bộ">Bộ</option>
+    <option value="Hộp">Hộp</option>
+    <option value="Tấm">Tấm</option>
+    <option value="Quyển">Quyển</option>
+    <option value="kg">kg</option>
+    <option value="custom">Khác...</option>
+  </select>
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg mt-1 custom-unit hidden" placeholder="Nhập đơn vị tính">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Số lượng" 
+      min="0" step="1" value="1">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Đơn giá">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Thành tiền" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="VAT" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Tổng giá trị" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <div class="flex space-x-2">
+    <button type="button" class="text-green-500 hover:text-green-700" onclick="copyRow(this)">
+      <i class="fas fa-copy"></i>
+    </button>
+    <button type="button" class="text-red-500 hover:text-red-700" onclick="deleteRow(this)">
+      <i class="fas fa-trash"></i>
+    </button>
+  </div>
+</td>
+`;
+                tableBody.appendChild(newRow);
+
+                // Tải các tùy chọn đã lưu cho đơn vị tính trong dòng mới
+                const unitSelect = newRow.querySelector('.unit-select');
+                if (unitSelect) {
+                    try {
+                        const savedUnits = JSON.parse(localStorage.getItem('savedDonViTinh')) || [];
+                        const customOption = Array.from(unitSelect.options).find(opt => opt.value === 'custom');
+                        const customPosition = customOption ?
+                            Array.from(unitSelect.options).indexOf(customOption) :
+                            unitSelect.options.length;
+
+                        savedUnits.forEach(unit => {
+                            // Kiểm tra nếu tùy chọn đã tồn tại
+                            if (!Array.from(unitSelect.options).some(opt => opt.value === unit)) {
+                                const option = document.createElement('option');
+                                option.value = unit;
+                                option.textContent = unit;
+                                option.classList.add('user-added');
+                                unitSelect.insertBefore(option, unitSelect.options[customPosition]);
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Lỗi khi tải đơn vị tính đã lưu:', error);
+                    }
+                }
+
+                // Thêm sự kiện cho các input để tính toán
+                const inputs = newRow.querySelectorAll('input');
+                inputs[2].addEventListener('input', () => this.calculateRowValues(newRow));
+                inputs[3].addEventListener('input', () => this.calculateRowValues(newRow));
+
+                // Thêm:
+                inputs[0].addEventListener('input', () => {
+                    setTimeout(() => this.highlightIncompleteRows(), 100);
+                });
+
+                // Xử lý sự kiện cho input đơn vị tính tùy chỉnh
+                const customUnitInput = newRow.querySelector('.custom-unit');
+                if (customUnitInput && unitSelect) {
+                    customUnitInput.addEventListener('blur', (e) => {
+                        if (e.target.value && unitSelect.value === 'custom') {
+                            try {
+                                // Thêm vào dropdown
+                                const value = e.target.value;
+                                const customOption = Array.from(unitSelect.options).find(opt => opt.value === 'custom');
+                                const customPosition = customOption ?
+                                    Array.from(unitSelect.options).indexOf(customOption) :
+                                    unitSelect.options.length;
+
+                                // Kiểm tra nếu tùy chọn đã tồn tại
+                                if (!Array.from(unitSelect.options).some(opt => opt.value === value)) {
+                                    const option = document.createElement('option');
+                                    option.value = value;
+                                    option.textContent = value;
+                                    option.classList.add('user-added');
+                                    unitSelect.insertBefore(option, unitSelect.options[customPosition]);
+                                }
+
+                                // Chọn tùy chọn mới
+                                unitSelect.value = value;
+
+                                // Lưu vào localStorage
+                                const savedUnits = JSON.parse(localStorage.getItem('savedDonViTinh')) || [];
+                                if (!savedUnits.includes(value)) {
+                                    savedUnits.push(value);
+                                    localStorage.setItem('savedDonViTinh', JSON.stringify(savedUnits));
+                                }
+
+                                // Ẩn ô input tùy chỉnh
+                                e.target.classList.add('hidden');
+                            } catch (error) {
+                                console.error('Lỗi khi thêm đơn vị tính tùy chỉnh:', error);
+                            }
+                        }
+                    });
+                }
+
+                // Thêm sự kiện cho dropdown đơn vị tính
+                if (unitSelect) {
+                    unitSelect.addEventListener('change', (e) => {
+                        const customInput = newRow.querySelector('.custom-unit');
+                        if (customInput) {
+                            if (e.target.value === 'custom') {
+                                customInput.classList.remove('hidden');
+                                customInput.focus();
+                            } else {
+                                customInput.classList.add('hidden');
+                                customInput.value = '';
+                            }
+                        }
+                    });
+                }
+
+                this.calculateRowValues(newRow);
+                newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.updateProgressSteps(2);
+            }
+
+            // Xóa hàng
+            deleteRow(button) {
+                const row = button.closest('tr');
+                row.classList.add('animate-fade-out');
+
+                setTimeout(() => {
+                    row.remove();
+
+                    // Cập nhật tổng số sau khi xóa
+                    this.updateOrderTotals();
+
+                    // Ẩn phần chi tiết nếu không còn hàng nào
+                    if (document.getElementById('chiTietTableBody').children.length === 0) {
+                        document.getElementById('chiTietSection').classList.add('hidden');
+                        // Cập nhật trạng thái tiến trình
+                        this.updateProgressSteps(1);
+                    }
+                }, 300);
+            }
+
+            // Tính toán giá trị cho một hàng
+            calculateRowValues(row) {
+                if (!row) return;
+
+                const inputs = row.querySelectorAll('input');
+                if (!inputs || inputs.length < 7) return;
+
+                const soLuong = parseFloat(inputs[2].value) || 0;
+                const donGia = parseFloat(inputs[3].value) || 0;
+
+                // Tính giá trị cơ bản
+                const thanhTien = soLuong * donGia;
+
+                // Lấy các giá trị từ data attributes
+                const phuPhiDieuChinh = parseFloat(row.dataset.phuPhiDieuChinh) || 0;
+                const thueSuat = parseFloat(row.dataset.thueSuat) || 0;
+                const phiQuanLy = parseFloat(row.dataset.phiQuanLy) || 0;
+                const tienHoanTra = parseFloat(row.dataset.tienHoanTra) || 0;
+
+                // Tính giá trị tổng
+                const thanhTienSauDieuChinh = soLuong * (donGia + phuPhiDieuChinh);
+                const tienThue = thanhTienSauDieuChinh * (thueSuat / 100);
+
+                // Tính chi phí quản lý theo phần chênh lệch giữa thành tiền sau điều chỉnh và thành tiền gốc
+                const chiPhiQuanLy = phiQuanLy * (thanhTienSauDieuChinh - thanhTien) / 100;
+
+                // Tính tổng giá trị theo công thức
+                const tongGiaTri = thanhTienSauDieuChinh + tienThue;
+
+                // Cập nhật giá trị hiển thị
+                inputs[4].value = this.formatCurrency(thanhTien); // Thành tiền
+                inputs[5].value = this.formatCurrency(tienThue);  // VAT
+                inputs[6].value = this.formatCurrency(tongGiaTri); // Tổng giá trị
+
+                // Lưu giá trị thô vào data attributes để tính toán
+                row.dataset.thanhTien = thanhTien;
+                row.dataset.donGiaDieuChinh = donGia + phuPhiDieuChinh;
+                row.dataset.thanhTienSauDieuChinh = thanhTienSauDieuChinh;
+                row.dataset.tienThue = tienThue;
+                row.dataset.tongGiaTri = tongGiaTri;
+
+                // Cập nhật tổng giá trị đơn hàng
+                this.updateOrderTotals();
+            }
+
+            // Thêm một hàm helper để tính tiền hoàn trả dựa trên công thức
+            calculateTienHoanTra(thanhTienHang, thanhTienSauDieuChinh, tienThue, phiQuanLy, tongGiaTri) {
+                // Công thức: [Tiền hoàn trả] = [Tổng giá trị] - ([Thành tiền hàng] + [Tiền thuế] + [Phí quản lý]*([Thành tiền sau điều chỉnh]-[Thành tiền hàng]))
+                const chiPhiQuanLy = (phiQuanLy / 100) * (thanhTienSauDieuChinh - thanhTienHang);
+                return tongGiaTri - (thanhTienHang + tienThue + chiPhiQuanLy);
+            }
+
+            // Cập nhật tổng giá trị đơn hàng
+            updateOrderTotals() {
+                const rows = document.querySelectorAll('#chiTietTableBody tr');
+                let tongTienHang = 0;
+
+                rows.forEach(row => {
+                    // Use stored raw value from data attribute
+                    tongTienHang += parseFloat(row.dataset.tongGiaTri) || 0;
+                });
+
+                // Get the value of "Giá sản xuất tạm tính"
+                const giaSanXuatTamTinh = this.parseCurrency(document.getElementById('giaSanXuatTamTinh').value) || 0;
+
+                // Calculate "Tổng giá trị đơn" = "Tổng tiền hàng" + "Giá sản xuất tạm tính"
+                const tongGiaTriDon = tongTienHang;
+
+                // Update the form fields with formatted values
+                document.getElementById('tongTienHang').value = this.formatCurrency(tongTienHang);
+                document.getElementById('tongGiaTriDon').value = this.formatCurrency(tongGiaTriDon);
+            }
+
+            // Thu thập dữ liệu từ bảng chi tiết hàng hóa
+            collectHangHoaData() {
+                const maDonHang = document.getElementById('maDonHang').value;
+                const hangHoaRows = document.querySelectorAll('#chiTietTableBody tr');
+                const hangHoaItems = [];
+                const errorItems = []; // Mảng lưu các lỗi
+
+                hangHoaRows.forEach((row, index) => {
+                    const inputs = row.querySelectorAll('input');
+
+                    // Xử lý đơn vị tính - lấy từ select hoặc custom input
+                    const unitSelect = row.querySelector('.unit-select');
+                    let donViTinh = '';
+
+                    if (unitSelect) {
+                        if (unitSelect.value === 'custom') {
+                            const customInput = row.querySelector('.custom-unit');
+                            donViTinh = customInput ? customInput.value : '';
+                        } else if (unitSelect.value) {
+                            donViTinh = unitSelect.options[unitSelect.selectedIndex].text;
+                        }
+                    } else {
+                        // Tương thích ngược với dữ liệu cũ
+                        donViTinh = row.querySelector('td:nth-child(3) input')?.value || '';
+                    }
+
+                    // Lấy loại hàng hóa từ data attribute
+                    const loaiHangHoa = row.dataset.loaiHangHoa || '';
+                    const tenHangHoa = inputs[0].value;
+
+                    // Kiểm tra các trường bắt buộc
+                    if (!tenHangHoa) {
+                        errorItems.push(`Dòng ${index + 1}: Chưa nhập tên hàng hóa`);
+                    }
+                    if (!loaiHangHoa) {
+                        errorItems.push(`Dòng ${index + 1}: Chưa chọn loại hàng hóa cho "${tenHangHoa || 'hàng hóa không tên'}"`);
+                    }
+
+                    // Tạo đối tượng chứa thông tin hàng hóa
+                    const hangHoaItem = {
+                        'ID hàng hoá': this.generateHangHoaID(maDonHang, index + 1),
+                        'ID đơn hàng': maDonHang,
+                        'Tên hàng hoá': tenHangHoa,
+                        'Loại hàng hoá': loaiHangHoa,
+                        'Mô tả': row.dataset.moTa || '',
+                        'Đơn vị tính': donViTinh,
+                        'Số lượng': parseFloat(inputs[2].value) || 0,
+                        'Đơn giá': parseFloat(inputs[3].value) || 0,
+                        'Thành tiền hàng': parseFloat(row.dataset.thanhTien) || 0,
+                        'Phụ phí điều chỉnh': parseFloat(row.dataset.phuPhiDieuChinh) || 0,
+                        'Đơn giá điều chỉnh': parseFloat(row.dataset.donGiaDieuChinh) || 0,
+                        'Thành tiền sau điều chỉnh': parseFloat(row.dataset.thanhTienSauDieuChinh) || 0,
+                        'Thuế suất': parseFloat(row.dataset.thueSuat) / 100 || 0,
+                        'Tiền thuế': parseFloat(row.dataset.tienThue) || 0,
+                        'Phí suất quản lý điều chỉnh': parseFloat(row.dataset.phiQuanLy) / 100 || 0,
+                        'Tổng giá trị': parseFloat(row.dataset.tongGiaTri) || 0,
+                        'Tiền hoàn trả cho khách': parseInt(row.dataset.tienHoanTra.replace(/\./g, '')) || 0,
+                        'Ghi chú': row.dataset.ghiChu || '',
+                        'Người tạo': this.employeeName,
+                        'Ngày tạo': this.formatDate(new Date())
+                    };
+
+                    hangHoaItems.push(hangHoaItem);
+                });
+
+                // Nếu có lỗi, ném ra exception với danh sách lỗi
+                if (errorItems.length > 0) {
+                    throw new Error(errorItems.join('\n'));
+                }
+
+                return hangHoaItems;
+            }
+
+            // Lưu dữ liệu vào AppSheet 
+            async saveDataToAppSheet() {
+                try {
+                    // Kiểm tra các trường bắt buộc
+                    const tenDonHang = document.getElementById('tenDonHang').value;
+                    const khachHang = document.getElementById('khachHang').value;
+                    const ngayDatHang = document.getElementById('ngayDatHang').value;
+                    const nguonKhachHangSelect = document.getElementById('nguonKhachHang');
+                    const nguonKhachHangKhac = document.getElementById('nguonKhachHangKhac');
+                    const nguonKhachHangValue = nguonKhachHangSelect.value === 'Khác'
+                        ? nguonKhachHangKhac.value
+                        : nguonKhachHangSelect.value;
+                    const idNhanVien = document.getElementById('nguoiPhuTrach').value;
+
+                    if (!tenDonHang || !khachHang || !ngayDatHang) {
+                        throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc: Tên đơn hàng, Khách hàng, Ngày đặt hàng');
+                    }
+
+                    // Kiểm tra danh sách hàng hóa
+                    const hangHoaRows = document.querySelectorAll('#chiTietTableBody tr');
+                    if (hangHoaRows.length === 0) {
+                        throw new Error('Vui lòng thêm ít nhất một hàng hóa vào đơn hàng');
+                    }
+
+                    // Thu thập và kiểm tra dữ liệu hàng hóa
+                    let hangHoaData;
+                    try {
+                        hangHoaData = this.collectHangHoaData();
+                    } catch (validationError) {
+                        // Hiển thị lỗi validation với danh sách chi tiết
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Dữ liệu chưa đầy đủ',
+                            html: `<div style="text-align: left; white-space: pre-line;">${validationError.message}</div>`,
+                            confirmButtonColor: '#d33',
+                            confirmButtonText: 'Đã hiểu'
+                        });
+                        return; // Dừng quá trình lưu
+                    }
+
+                    // Tạo promise toast thay vì loading overlay
+                    const savePromise = new Promise(async (resolve, reject) => {
+                        try {
+                            // Thu thập dữ liệu đơn hàng
+                            const donHangData = {
+                                'ID đơn hàng': document.getElementById('maDonHang').value,
+                                'Mã đơn hàng': document.getElementById('maDonHang').value,
+                                'Tên đơn hàng': tenDonHang,
+                                'ID khách hàng': khachHang,
+                                'ID nhân viên': idNhanVien,
+                                'Nguồn khách hàng': nguonKhachHangValue,
+                                'Ngày đặt hàng': ngayDatHang,
+                                'Ngày hạch toán': document.getElementById('ngayHachToan').value || '',
+                                'Giá sản xuất tạm tính': this.parseCurrency(document.getElementById('giaSanXuatTamTinh').value) || 0,
+                                'Tổng tiền hàng': this.parseCurrency(document.getElementById('tongTienHang').value) || 0,
+                                'Tổng giá trị đơn': this.parseCurrency(document.getElementById('tongGiaTriDon').value) || 0,
+                                'Ghi chú': document.getElementById('ghiChu').value || '',
+                                'Người tạo': this.employeeName
+                            };
+
+                            // Tạo payload cho đơn hàng
+                            const donHangPayload = {
+                                "Action": "Add",
+                                "Properties": {},
+                                "Rows": [donHangData]
+                            };
+
+                            // Sử dụng dữ liệu đã được validate
+                            this.hangHoaList = hangHoaData;
+
+                            // Tạo payload dữ liệu hàng hóa
+                            const hangHoaPayload = {
+                                "Action": "Add",
+                                "Properties": {},
+                                "Rows": this.hangHoaList
+                            };
+
+                            // Sử dụng Promise.all để gửi cả hai request cùng lúc
+                            const [responseDonHang, responseHangHoa] = await Promise.all([
+                                axios({
+                                    method: 'POST',
+                                    url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Đơn hàng/Action`,
+                                    headers: {
+                                        'ApplicationAccessKey': this.accessKey,
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    },
+                                    data: donHangPayload,
+                                    validateStatus: function (status) {
+                                        return status >= 200 && status < 300;
+                                    }
+                                }),
+                                axios({
+                                    method: 'POST',
+                                    url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Hàng hoá/Action`,
+                                    headers: {
+                                        'ApplicationAccessKey': this.accessKey,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    data: hangHoaPayload
+                                })
+                            ]);
+
+                            // Kiểm tra kết quả
+                            if (responseDonHang.status !== 200) {
+                                throw new Error(`API Error: ${responseDonHang.status} - ${JSON.stringify(responseDonHang.data)}`);
+                            }
+
+                            if (responseHangHoa.status !== 200) {
+                                throw new Error(`API Error: ${responseHangHoa.status} - ${JSON.stringify(responseHangHoa.data)}`);
+                            }
+
+                            // Cập nhật trạng thái tiến trình
+                            this.updateProgressSteps(3);
+                            resolve("Lưu thành công!");
+
+                            // Reset form sau khi lưu thành công
+                            setTimeout(() => this.resetForm(), 1500);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+
+                    // Sử dụng FuiToast.promise
+                    FuiToast.promise(
+                        savePromise,
+                        {
+                            loading: 'Đang lưu dữ liệu...',
+                            success: () => 'Đã lưu đơn hàng và hàng hóa thành công!',
+                            error: (error) => `Lỗi: ${error.message || 'Có lỗi xảy ra khi lưu thông tin!'}`
+                        },
+                        {
+                            isClose: true
+                        }
+                    );
+
+                } catch (error) {
+                    console.error('Lỗi khi lưu dữ liệu:', error);
+                    FuiToast.error(error.message || 'Có lỗi xảy ra khi lưu thông tin! Vui lòng thử lại.');
+                }
+            }
+
+            // Thêm hàm này vào class OrderManager
+            highlightIncompleteRows() {
+                const hangHoaRows = document.querySelectorAll('#chiTietTableBody tr');
+
+                hangHoaRows.forEach((row, index) => {
+                    const tenHangHoa = row.querySelector('input[type="text"]').value;
+                    const loaiHangHoa = row.dataset.loaiHangHoa || '';
+
+                    // Xóa highlight cũ
+                    row.classList.remove('bg-red-50', 'border-red-200');
+
+                    // Highlight nếu thiếu thông tin
+                    if (tenHangHoa && !loaiHangHoa) {
+                        row.classList.add('bg-red-50', 'border-red-200');
+                        row.style.borderWidth = '1px';
+                        row.style.borderStyle = 'solid';
+                    } else if (tenHangHoa && loaiHangHoa) {
+                        row.classList.add('bg-green-50');
+                        row.style.borderWidth = '';
+                        row.style.borderStyle = '';
+                    }
+                });
+            }
+
+
+            // Mở modal chi tiết hàng hóa
+            openHangHoaDetail(button) {
+                this.currentEditingRow = button.closest('tr');
+                const inputs = this.currentEditingRow.querySelectorAll('input');
+
+                // Điền dữ liệu vào các trường trong modal
+                document.getElementById('modalTenHangHoa').value = inputs[0].value || '';
+
+                // Xử lý đơn vị tính - lấy từ select hoặc custom input
+                const unitSelect = this.currentEditingRow.querySelector('.unit-select');
+                const customUnitInput = this.currentEditingRow.querySelector('.custom-unit');
+                const modalDonViTinh = document.getElementById('modalDonViTinh');
+                const modalDonViTinhCustom = document.getElementById('modalDonViTinhCustom');
+
+                if (unitSelect) {
+                    if (unitSelect.value === 'custom' && customUnitInput) {
+                        modalDonViTinh.value = 'custom';
+                        modalDonViTinhCustom.value = customUnitInput.value;
+                        modalDonViTinhCustom.classList.remove('hidden');
+                    } else {
+                        modalDonViTinh.value = unitSelect.value;
+                        modalDonViTinhCustom.classList.add('hidden');
+                    }
+                } else {
+                    // Tương thích ngược với dữ liệu cũ
+                    const donViTinhValue = this.currentEditingRow.querySelector('td:nth-child(3) input')?.value || '';
+                    // Tìm xem có trùng với bất kỳ tùy chọn có sẵn nào không
+                    const option = Array.from(modalDonViTinh.options)
+                        .find(opt => opt.value && opt.value !== 'custom' && opt.text === donViTinhValue);
+
+                    if (option) {
+                        modalDonViTinh.value = option.value;
+                        modalDonViTinhCustom.classList.add('hidden');
+                    } else if (donViTinhValue) {
+                        modalDonViTinh.value = 'custom';
+                        modalDonViTinhCustom.value = donViTinhValue;
+                        modalDonViTinhCustom.classList.remove('hidden');
+                    } else {
+                        modalDonViTinh.value = '';
+                        modalDonViTinhCustom.classList.add('hidden');
+                    }
+                }
+
+                document.getElementById('modalSoLuong').value = inputs[2].value || '1';
+                document.getElementById('modalDonGia').value = inputs[3].value || '0';
+
+                // Xử lý loại hàng hoá
+                const loaiHangHoa = this.currentEditingRow.dataset.loaiHangHoa || '';
+                const modalLoaiHangHoa = document.getElementById('modalLoaiHangHoa');
+                const modalLoaiHangHoaCustom = document.getElementById('modalLoaiHangHoaCustom');
+
+                // Kiểm tra xem giá trị có trùng với bất kỳ tùy chọn có sẵn nào không
+                const loaiOption = Array.from(modalLoaiHangHoa.options)
+                    .find(opt => opt.value && opt.value !== 'custom' && opt.text === loaiHangHoa);
+
+                if (loaiOption) {
+                    modalLoaiHangHoa.value = loaiOption.value;
+                    modalLoaiHangHoaCustom.classList.add('hidden');
+                } else if (loaiHangHoa) {
+                    modalLoaiHangHoa.value = 'custom';
+                    modalLoaiHangHoaCustom.value = loaiHangHoa;
+                    modalLoaiHangHoaCustom.classList.remove('hidden');
+                } else {
+                    modalLoaiHangHoa.value = '';
+                    modalLoaiHangHoaCustom.classList.add('hidden');
+                }
+
+                // Lấy dữ liệu từ các data attributes hoặc đặt giá trị mặc định
+                document.getElementById('modalMoTa').value = this.currentEditingRow.dataset.moTa || '';
+                document.getElementById('modalPhuPhiDieuChinh').value = this.currentEditingRow.dataset.phuPhiDieuChinh || '0';
+                document.getElementById('modalThueSuat').value = this.currentEditingRow.dataset.thueSuat || '10';
+                document.getElementById('modalPhiQuanLy').value = this.currentEditingRow.dataset.phiQuanLy || '0';
+                document.getElementById('modalTienHoanTra').value = this.currentEditingRow.dataset.tienHoanTra || '0';
+                document.getElementById('modalGhiChu').value = this.currentEditingRow.dataset.ghiChu || '';
+
+                // Tính toán các giá trị ban đầu
+                this.calculateModalValues();
+                document.getElementById('hangHoaDetailModal').classList.remove('hidden');
+            }
+
+            // Đóng modal chi tiết hàng hóa
+            closeHangHoaDetailModal() {
+                document.getElementById('hangHoaDetailModal').classList.add('hidden');
+                this.currentEditingRow = null;
+            }
+
+            // Tính toán giá trị trong modal
+            // Cập nhật hàm calculateModalValues
+            calculateModalValues() {
+                if (!this.currentEditingRow) return;
+
+                const soLuong = parseFloat(document.getElementById('modalSoLuong').value) || 0;
+                const donGia = parseFloat(document.getElementById('modalDonGia').value) || 0;
+                const phuPhiDieuChinh = parseFloat(document.getElementById('modalPhuPhiDieuChinh').value) || 0;
+                const thueSuat = parseFloat(document.getElementById('modalThueSuat').value) || 0;
+                const phiQuanLy = parseFloat(document.getElementById('modalPhiQuanLy').value) || 0;
+
+                // Các tính toán cơ bản
+                const thanhTienHang = soLuong * donGia;
+                const donGiaDieuChinh = donGia + phuPhiDieuChinh;
+                const thanhTienSauDieuChinh = soLuong * donGiaDieuChinh;
+                const tienThue = thanhTienSauDieuChinh * (thueSuat / 100);
+
+                // Tính chi phí quản lý (là % của phần chênh lệch thành tiền)
+                const chiPhiQuanLy = phiQuanLy * (thanhTienSauDieuChinh - thanhTienHang) / 100;
+
+                // Tính tiền hoàn trả theo công thức
+                const tienHoanTra = (thanhTienSauDieuChinh + tienThue) - (thanhTienHang + tienThue + chiPhiQuanLy);
+
+                // Tính tổng giá trị cuối cùng
+                const tongGiaTri = thanhTienSauDieuChinh + tienThue;
+
+                // Cập nhật các trường trong modal với định dạng tiền tệ
+                document.getElementById('modalThanhTienHang').value = this.formatCurrency(thanhTienHang);
+                document.getElementById('modalDonGiaDieuChinh').value = this.formatCurrency(donGiaDieuChinh);
+                document.getElementById('modalThanhTienSauDieuChinh').value = this.formatCurrency(thanhTienSauDieuChinh);
+                document.getElementById('modalTienThue').value = this.formatCurrency(tienThue);
+                document.getElementById('modalTienHoanTra').value = this.formatCurrency(tienHoanTra > 0 ? tienHoanTra : 0);
+                document.getElementById('modalTongGiaTri').value = this.formatCurrency(tongGiaTri);
+            }
+
+            // Xử lý cập nhật thông tin hàng hóa
+            handleUpdateHangHoa(event) {
+                event.preventDefault();
+
+                if (!this.currentEditingRow) return;
+
+                // Trong hàm handleUpdateHangHoa, thêm đoạn này trước try block:
+
+                const tenHangHoa = document.getElementById('modalTenHangHoa').value;
+                const modalLoaiHangHoa = document.getElementById('modalLoaiHangHoa');
+                const modalLoaiHangHoaCustom = document.getElementById('modalLoaiHangHoaCustom');
+
+                const loaiHangHoa = modalLoaiHangHoa.value === 'custom' ?
+                    modalLoaiHangHoaCustom.value :
+                    modalLoaiHangHoa.options[modalLoaiHangHoa.selectedIndex].text;
+
+                // Lưu ánh xạ do người dùng tạo
+                if (tenHangHoa && loaiHangHoa) {
+                    this.saveUserMapping(tenHangHoa, loaiHangHoa);
+                }
+
+                try {
+                    // Cập nhật các giá trị trong hàng
+                    const rowInputs = this.currentEditingRow.querySelectorAll('input');
+                    rowInputs[0].value = document.getElementById('modalTenHangHoa').value;
+
+                    // Xử lý đơn vị tính
+                    const modalDonViTinh = document.getElementById('modalDonViTinh');
+                    const modalDonViTinhCustom = document.getElementById('modalDonViTinhCustom');
+                    let donViTinhValue = modalDonViTinh.value;
+
+                    // Lấy select trong hàng
+                    const unitSelect = this.currentEditingRow.querySelector('.unit-select');
+                    const customUnitInput = this.currentEditingRow.querySelector('.custom-unit');
+
+                    if (unitSelect) {
+                        unitSelect.value = donViTinhValue;
+
+                        if (donViTinhValue === 'custom') {
+                            customUnitInput.value = modalDonViTinhCustom.value;
+                            customUnitInput.classList.remove('hidden');
+                        } else {
+                            customUnitInput.classList.add('hidden');
+                        }
+                    } else {
+                        // Tương thích ngược với dữ liệu cũ
+                        const donViTinhInput = this.currentEditingRow.querySelector('td:nth-child(3) input');
+                        if (donViTinhInput) {
+                            donViTinhInput.value = donViTinhValue === 'custom' ?
+                                modalDonViTinhCustom.value :
+                                modalDonViTinh.options[modalDonViTinh.selectedIndex].text;
+                        }
+                    }
+
+                    // Xử lý loại hàng hoá
+                    const modalLoaiHangHoa = document.getElementById('modalLoaiHangHoa');
+                    const modalLoaiHangHoaCustom = document.getElementById('modalLoaiHangHoaCustom');
+
+                    this.currentEditingRow.dataset.loaiHangHoa = modalLoaiHangHoa.value === 'custom' ?
+                        modalLoaiHangHoaCustom.value :
+                        modalLoaiHangHoa.options[modalLoaiHangHoa.selectedIndex].text;
+
+                    // Cập nhật các trường khác
+                    rowInputs[2].value = document.getElementById('modalSoLuong').value;
+                    rowInputs[3].value = document.getElementById('modalDonGia').value;
+
+                    // Cập nhật các data attributes với giá trị thô để tính toán
+                    this.currentEditingRow.dataset.moTa = document.getElementById('modalMoTa').value;
+                    this.currentEditingRow.dataset.phuPhiDieuChinh = document.getElementById('modalPhuPhiDieuChinh').value;
+                    this.currentEditingRow.dataset.thueSuat = document.getElementById('modalThueSuat').value;
+                    this.currentEditingRow.dataset.phiQuanLy = document.getElementById('modalPhiQuanLy').value;
+                    this.currentEditingRow.dataset.tienHoanTra = document.getElementById('modalTienHoanTra').value;
+                    this.currentEditingRow.dataset.ghiChu = document.getElementById('modalGhiChu').value;
+
+                    // Lưu các giá trị đã tính toán
+                    const thanhTienHang = this.parseCurrency(document.getElementById('modalThanhTienHang').value);
+                    const thanhTienSauDieuChinh = this.parseCurrency(document.getElementById('modalThanhTienSauDieuChinh').value);
+                    const tienThue = this.parseCurrency(document.getElementById('modalTienThue').value);
+                    const tongGiaTri = this.parseCurrency(document.getElementById('modalTongGiaTri').value);
+
+                    this.currentEditingRow.dataset.thanhTien = thanhTienHang;
+                    this.currentEditingRow.dataset.thanhTienSauDieuChinh = thanhTienSauDieuChinh;
+                    this.currentEditingRow.dataset.tienThue = tienThue;
+                    this.currentEditingRow.dataset.tongGiaTri = tongGiaTri;
+
+                    // Tính toán lại giá trị và cập nhật các giá trị hiển thị đã được định dạng
+                    this.calculateRowValues(this.currentEditingRow);
+                    this.updateOrderTotals();
+
+                    // Highlight các hàng sau khi cập nhật
+                    this.highlightIncompleteRows();
+
+                    // Đóng modal
+                    this.closeHangHoaDetailModal();
+
+                    // Hiển thị thông báo thành công
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Cập nhật thành công!',
+                        text: 'Đã cập nhật thông tin hàng hóa.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } catch (error) {
+                    console.error('Lỗi cập nhật hàng:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: 'Có lỗi xảy ra khi cập nhật thông tin.',
+                        showConfirmButton: true
+                    });
+                }
+            }
+
+            // Mở modal thêm khách hàng
+            openKhachHangModal() {
+                document.getElementById('khachHangModal').classList.remove('hidden');
+            }
+
+            // Đóng modal thêm khách hàng
+            closeKhachHangModal() {
+                document.getElementById('khachHangModal').classList.add('hidden');
+                document.getElementById('khachHangForm').reset();
+            }
+
+            // Xử lý thêm khách hàng mới
+            async handleThemKhachHang(event) {
+                event.preventDefault();
+
+                try {
+                    this.showLoading('Đang lưu thông tin khách hàng...');
+
+                    const khachHangData = {
+                        'Mã khách hàng': document.getElementById('maKhachHang').value,
+                        'Tên khách hàng đầy đủ': document.getElementById('tenKhachHangDayDu').value,
+                        'Tên khách hàng viết tắt': document.getElementById('tenKhachHangVietTat').value,
+                        'Loại khách hàng': document.getElementById('loaiKhachHang').value,
+                        'Địa chỉ Hoá đơn': document.getElementById('diaChiHoaDon').value,
+                        'MST': document.getElementById('maSoThue').value,
+                        'Địa chỉ trả hàng': document.getElementById('diaChiTraHang').value,
+                        'SĐT': document.getElementById('soDienThoai').value,
+                        'Email': document.getElementById('email').value,
+                        'Ghi chú': document.getElementById('ghiChuKhachHang').value,
+                        'Người tạo': this.employeeName,
+                        'Ngày tạo': this.formatDate(new Date())
+                    };
+
+                    const response = await axios({
+                        method: 'POST',
+                        url: `https://www.appsheet.com/api/v2/apps/${this.appId}/tables/Khách hàng/Action`,
+                        headers: {
+                            'ApplicationAccessKey': this.accessKey,
+                            'Content-Type': 'application/json'
+                        },
+                        data: {
+                            "Action": "Add",
+                            "Properties": {
+                                "Locale": "vi-VN",
+                                "Timezone": "Asia/Ho_Chi_Minh"
+                            },
+                            "Rows": [khachHangData]
+                        }
+                    });
+
+                    if (response.status === 200) {
+                        // Lưu lại các giá trị dùng để tìm kiếm khách hàng vừa thêm
+                        const tenKhachHang = khachHangData['Tên khách hàng đầy đủ'];
+                        const soDienThoai = khachHangData['SĐT'];
+
+                        // Tải lại toàn bộ danh sách khách hàng để có thông tin mới nhất
+                        await this.loadKhachHangList();
+
+                        // Tìm khách hàng vừa thêm trong danh sách đã tải lại
+                        const newlyAddedCustomer = this.khachHangList.find(
+                            customer => customer['Tên khách hàng đầy đủ'] === tenKhachHang &&
+                                customer['SĐT'] === soDienThoai
+                        );
+
+                        if (!newlyAddedCustomer) {
+                            console.warn('Không tìm thấy khách hàng mới trong danh sách đã tải lại');
+                        }
+
+                        // Khởi tạo lại dropdown khách hàng
+                        if (this.khachHangChoices) {
+                            this.khachHangChoices.destroy();
+                        }
+
+                        // Tạo lại dropdown từ danh sách đã cập nhật
+                        const khachHangSelect = document.getElementById('khachHang');
+                        khachHangSelect.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
+
+                        this.khachHangList.forEach(khachHang => {
+                            const option = document.createElement('option');
+                            option.value = khachHang['ID khách hàng'] || khachHang.ID;
+                            option.textContent = khachHang['Tên khách hàng đầy đủ'] || khachHang.Ten;
+                            khachHangSelect.appendChild(option);
+                        });
+
+                        // Khởi tạo lại Choices.js
+                        this.khachHangChoices = new Choices('#khachHang', {
+                            searchEnabled: true,
+                            searchPlaceholderValue: 'Nhập tên để tìm...',
+                            noResultsText: 'Không tìm thấy khách hàng',
+                            itemSelectText: 'Chọn',
+                            removeItemButton: true,
+                            searchFields: ['label'],
+                            position: 'bottom'
+                        });
+
+                        // Chọn khách hàng mới thêm nếu tìm thấy
+                        if (newlyAddedCustomer) {
+                            const customerId = newlyAddedCustomer['ID khách hàng'] || newlyAddedCustomer.ID;
+                            this.khachHangChoices.setChoiceByValue(customerId);
+                        }
+
+                        // Đóng modal và hiện thông báo thành công
+                        this.closeKhachHangModal();
+                        this.showAlert('success', 'Thành công!', 'Đã thêm khách hàng mới thành công!');
+                    } else {
+                        throw new Error(`HTTP Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi thêm khách hàng:', error);
+                    this.showAlert('error', 'Lỗi!', 'Không thể thêm khách hàng. Vui lòng thử lại!');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            // Mở modal import Excel
+            openImportModal() {
+                document.getElementById('importModal').classList.remove('hidden');
+                document.getElementById('selectedFileInfo').classList.add('hidden');
+                document.getElementById('previewContainer').classList.add('hidden');
+                document.getElementById('btnNhapDuLieu').disabled = true;
+            }
+
+            // Đóng modal import Excel
+            closeImportModal() {
+                document.getElementById('importModal').classList.add('hidden');
+                document.getElementById('fileInput').value = '';
+            }
+
+
+            // Xử lý khi chọn file Excel
+            async handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const fileInfo = document.getElementById('selectedFileInfo');
+                fileInfo.innerHTML = `Đã chọn: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                fileInfo.classList.remove('hidden');
+
+                // Preview file contents
+                await this.previewExcelFile(file);
+            }
+
+            // Tải thư viện SheetJS
+            async loadSheetJS() {
+                return new Promise((resolve, reject) => {
+                    if (window.XLSX) {
+                        resolve();
+                        return;
+                    }
+
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Không thể tải thư viện SheetJS.'));
+                    document.head.appendChild(script);
+                });
+            }
+
+            // Xem trước nội dung file Excel
+            async previewExcelFile(file) {
+                try {
+                    this.showLoading('Đang đọc file...');
+
+                    // Load SheetJS if not already loaded
+                    await this.loadSheetJS();
+
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+
+                            // Assume the first sheet contains our data
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                            if (jsonData.length < 2) { // At least headers and one data row
+                                throw new Error('File không chứa đủ dữ liệu. Vui lòng kiểm tra lại.');
+                            }
+
+                            // Get headers (first row)
+                            const headers = jsonData[0];
+
+                            // Generate preview table
+                            this.generatePreviewTable(headers, jsonData.slice(1, 6)); // Show up to 5 rows
+
+                            // Store the full data for later import
+                            document.getElementById('importModal').dataset.jsonData = JSON.stringify(jsonData);
+
+                            // Enable import button
+                            document.getElementById('btnNhapDuLieu').disabled = false;
+
+                            this.hideLoading();
+                        } catch (error) {
+                            this.hideLoading();
+                            console.error('Lỗi xử lý file Excel:', error);
+                            this.showAlert('error', 'Lỗi', error.message || 'Không thể đọc dữ liệu từ file. Vui lòng kiểm tra định dạng file.');
+                        }
+                    };
+
+                    reader.onerror = () => {
+                        this.hideLoading();
+                        this.showAlert('error', 'Lỗi', 'Không thể đọc file. Vui lòng thử lại.');
+                    };
+
+                    reader.readAsArrayBuffer(file);
+
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Lỗi đọc file:', error);
+                    this.showAlert('error', 'Lỗi', error.message || 'Có lỗi xảy ra khi đọc file.');
+                }
+            }
+
+            // Tạo bảng xem trước dữ liệu Excel
+            generatePreviewTable(headers, dataRows) {
+                const thead = document.getElementById('previewTableHead');
+                const tbody = document.getElementById('previewTableBody');
+
+                // Clear previous content
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+
+                // Generate header row
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'py-2 px-4 border-b border-gray-300 bg-gray-100 font-medium text-gray-700 text-center';
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+
+                // Generate data rows
+                dataRows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach((cell, index) => {
+                        const td = document.createElement('td');
+                        td.className = 'py-2 px-4 border-b border-gray-200';
+
+                        // Format numbers properly
+                        if (typeof cell === 'number') {
+                            // Check if this column likely contains currency values (based on header name)
+                            const headerText = headers[index]?.toLowerCase() || '';
+                            if (headerText.includes('giá') || headerText.includes('tiền') || headerText.includes('phí')) {
+                                td.textContent = this.formatCurrency(cell);
+                                td.className += ' text-right';
+                            } else {
+                                td.textContent = cell;
+                                td.className += ' text-center';
+                            }
+                        } else {
+                            td.textContent = cell || '';
+                        }
+
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+                // Show preview container
+                document.getElementById('previewContainer').classList.remove('hidden');
+            }
+
+            // Tải mẫu nhập Excel
+            async downloadImportTemplate() {
+                try {
+                    await this.loadSheetJS().then(() => {
+                        // Create workbook with template headers and example data
+                        const wb = XLSX.utils.book_new();
+
+                        // Define headers and sample data
+                        const headers = ['Tên hàng hoá', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Loại hàng hoá', 'Mô tả',
+                            'Phụ phí điều chỉnh', 'Thuế suất (%)', 'Phí suất quản lý điều chỉnh', 'Tiền hoàn trả', 'Ghi chú'];
+
+                        const exampleData = [
+                            ['Thép xây dựng CT2', 'Thanh', 20, 200000, 'Vật liệu xây dựng', 'Thép chịu lực', 0, 10, 0, 0, ''],
+                            ['Gạch lát nền 60x60', 'Thùng', 5, 450000, 'Vật liệu hoàn thiện', 'Gạch Eurotile', 50000, 8, 0, 0, 'Hàng nhập khẩu']
+                        ];
+
+                        // Create worksheet
+                        const wsData = [headers, ...exampleData];
+                        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+                        // Add column widths
+                        const colWidths = [
+                            { wch: 25 }, // Tên hàng hoá
+                            { wch: 15 }, // Đơn vị tính
+                            { wch: 10 }, // Số lượng
+                            { wch: 15 }, // Đơn giá
+                            { wch: 20 }, // Loại hàng hoá
+                            { wch: 25 }, // Mô tả
+                            { wch: 15 }, // Phụ phí điều chỉnh
+                            { wch: 12 }, // Thuế suất (%)
+                            { wch: 15 }, // Phí suất quản lý điều chỉnh
+                            { wch: 15 }, // Tiền hoàn trả
+                            { wch: 30 }  // Ghi chú
+                        ];
+                        ws['!cols'] = colWidths;
+
+                        // Add worksheet to workbook
+                        XLSX.utils.book_append_sheet(wb, ws, 'Mẫu nhập hàng hoá');
+
+                        // Write to file and trigger download
+                        XLSX.writeFile(wb, 'mau_nhap_hang_hoa.xlsx');
+                    });
+                } catch (error) {
+                    console.error('Lỗi khi tải mẫu nhập:', error);
+                    this.showAlert('error', 'Lỗi', 'Không thể tạo mẫu nhập. Vui lòng thử lại sau.');
+                }
+            }
+
+            // Nhập dữ liệu từ Excel
+            importDataFromExcel() {
+                try {
+                    const jsonDataStr = document.getElementById('importModal').dataset.jsonData;
+                    if (!jsonDataStr) {
+                        throw new Error('Không có dữ liệu để nhập. Vui lòng chọn file lại.');
+                    }
+
+                    this.showLoading('Đang nhập dữ liệu...');
+
+                    const jsonData = JSON.parse(jsonDataStr);
+
+                    // Headers are in the first row
+                    const headers = jsonData[0];
+                    const dataRows = jsonData.slice(1);
+
+                    // Find column indexes based on headers
+                    const colIndexes = {
+                        tenHangHoa: headers.findIndex(h => /tên.*hàng|hàng.*hóa/i.test(h)),
+                        donViTinh: headers.findIndex(h => /đơn.*vị|đơn.*tính/i.test(h)),
+                        soLuong: headers.findIndex(h => /số.*lượng/i.test(h)),
+                        donGia: headers.findIndex(h => /đơn.*giá/i.test(h)),
+                        loaiHangHoa: headers.findIndex(h => /loại.*hàng/i.test(h)),
+                        moTa: headers.findIndex(h => /mô.*tả/i.test(h)),
+                        phuPhi: headers.findIndex(h => /phụ.*phí/i.test(h)),
+                        thueSuat: headers.findIndex(h => /thuế.*suất/i.test(h)),
+                        phiQuanLy: headers.findIndex(h => /phí.*quản/i.test(h)),
+                        tienHoanTra: headers.findIndex(h => /tiền.*hoàn|hoàn.*trả/i.test(h)),
+                        ghiChu: headers.findIndex(h => /ghi.*chú/i.test(h))
+                    };
+
+                    // Check if required columns exist
+                    if (colIndexes.tenHangHoa === -1 || colIndexes.soLuong === -1 || colIndexes.donGia === -1) {
+                        throw new Error('File thiếu các cột bắt buộc (Tên hàng hoá, Số lượng hoặc Đơn giá).');
+                    }
+
+                    // Check if the chiTietSection is hidden and show it
+                    document.getElementById('chiTietSection').classList.remove('hidden');
+
+                    // For statistics
+                    let importCount = 0;
+                    let errorCount = 0;
+
+                    // Add each row to the product table
+                    dataRows.forEach(row => {
+                        try {
+                            // Skip empty rows (check if essential fields are empty)
+                            if (!row[colIndexes.tenHangHoa]) {
+                                return;
+                            }
+
+                            // Get values from row based on column indexes
+                            const getValue = (index, defaultValue) => {
+                                return index !== -1 && row[index] !== undefined ? row[index] : defaultValue;
+                            };
+
+                            const tenHangHoa = getValue(colIndexes.tenHangHoa, '');
+                            const donViTinh = getValue(colIndexes.donViTinh, '');
+                            const soLuong = parseFloat(getValue(colIndexes.soLuong, 1)) || 1;
+                            const donGia = parseFloat(getValue(colIndexes.donGia, 0)) || 0;
+                            const loaiHangHoa = getValue(colIndexes.loaiHangHoa, '');
+                            const moTa = getValue(colIndexes.moTa, '');
+                            const phuPhiDieuChinh = parseFloat(getValue(colIndexes.phuPhi, 0)) || 0;
+                            const thueSuat = parseFloat(getValue(colIndexes.thueSuat, 10)) || 10;
+                            const phiQuanLy = parseFloat(getValue(colIndexes.phiQuanLy, 0)) || 0;
+                            const tienHoanTra = parseFloat(getValue(colIndexes.tienHoanTra, 0)) || 0;
+                            const ghiChu = getValue(colIndexes.ghiChu, '');
+
+                            // Create a new row
+                            const tableBody = document.getElementById('chiTietTableBody');
+                            const newRow = document.createElement('tr');
+                            newRow.classList.add('animate-fade-in');
+
+                            // Set data attributes
+                            newRow.dataset.loaiHangHoa = loaiHangHoa;
+                            newRow.dataset.moTa = moTa;
+                            newRow.dataset.phuPhiDieuChinh = phuPhiDieuChinh;
+                            newRow.dataset.thueSuat = thueSuat;
+                            newRow.dataset.phiQuanLy = phiQuanLy;
+                            newRow.dataset.tienHoanTra = tienHoanTra;
+                            newRow.dataset.ghiChu = ghiChu;
+                            newRow.dataset.thanhTien = '0';
+                            newRow.dataset.thanhTienSauDieuChinh = '0';
+                            newRow.dataset.tienThue = '0';
+                            newRow.dataset.tongGiaTri = '0';
+
+                            // Trong hàm importDataFromExcel, cập nhật phần tạo dòng mới:
+                            newRow.innerHTML = `
+<td class="py-3 px-4 border-b border-gray-200">
+  <button type="button" class="text-blue-600 hover:text-blue-800" onclick="openHangHoaDetail(this)">
+   <i class="fas fa-edit"></i>
+  </button>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Tên hàng hoá" value="${tenHangHoa}" required>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Đơn vị tính" value="${donViTinh}">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Số lượng" 
+      min="0" step="1" value="${soLuong}">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Đơn giá" value="${donGia}">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Thành tiền" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="VAT" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Tổng giá trị" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <div class="flex space-x-2">
+    <button type="button" class="text-green-500 hover:text-green-700" onclick="copyRow(this)">
+      <i class="fas fa-copy"></i>
+    </button>
+    <button type="button" class="text-red-500 hover:text-red-700" onclick="deleteRow(this)">
+      <i class="fas fa-trash"></i>
+    </button>
+  </div>
+</td>
+`;
+                            tableBody.appendChild(newRow);
+
+                            // Add event listeners to inputs for calculation
+                            const rowInputs = newRow.querySelectorAll('input');
+                            rowInputs[2].addEventListener('input', () => this.calculateRowValues(newRow));
+                            rowInputs[3].addEventListener('input', () => this.calculateRowValues(newRow));
+
+                            this.calculateRowValues(newRow);
+                            importCount++;
+                        } catch (rowError) {
+                            console.error('Lỗi nhập dòng:', rowError, row);
+                            errorCount++;
+                        }
+                    });
+
+                    // Update totals and progress
+                    this.updateOrderTotals();
+                    this.updateProgressSteps(2);
+
+                    // Close modal
+                    this.closeImportModal();
+
+                    this.hideLoading();
+
+                    // Show result message
+                    let resultMessage = `Đã nhập ${importCount} sản phẩm từ Excel.`;
+                    if (errorCount > 0) {
+                        resultMessage += ` Bỏ qua ${errorCount} dòng không hợp lệ.`;
+                    }
+
+                    this.showAlert('success', 'Nhập dữ liệu thành công', resultMessage);
+
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Lỗi nhập dữ liệu:', error);
+                    this.showAlert('error', 'Lỗi nhập dữ liệu', error.message || 'Có lỗi xảy ra khi nhập dữ liệu từ Excel.');
+                }
+            }
+
+            // Xuất template in
+            async exportPrintTemplate() {
+                try {
+                    this.showLoading('Đang tạo mẫu in...');
+
+                    // Get order data
+                    const orderData = {
+                        maDonHang: document.getElementById('maDonHang').value,
+                        tenDonHang: document.getElementById('tenDonHang').value,
+                        khachHangSelect: document.getElementById('khachHang'),
+                        khachHang: document.getElementById('khachHang').options[document.getElementById('khachHang').selectedIndex]?.text || '',
+                        ngayDatHang: document.getElementById('ngayDatHang').value,
+                        tongTienHang: document.getElementById('tongTienHang').value,
+                        tongGiaTriDon: document.getElementById('tongGiaTriDon').value,
+                        ghiChu: document.getElementById('ghiChu').value
+                    };
+
+                    // Get product items
+                    const hangHoaItems = this.collectHangHoaData();
+
+                    // Generate HTML template
+                    const htmlContent = this.generatePrintHTML(orderData, hangHoaItems);
+
+                    // Create a Blob with the HTML content
+                    const blob = new Blob([htmlContent], { type: 'text/html' });
+
+                    // Create a URL for the blob
+                    const url = URL.createObjectURL(blob);
+
+                    // Create a link element to download the file
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Mau_in_${orderData.maDonHang}.html`;
+
+                    // Append link to body, click it, and remove it
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Release the URL object
+                    URL.revokeObjectURL(url);
+
+                    this.hideLoading();
+                    this.closeExportModal();
+
+                    this.showAlert('success', 'Xuất mẫu in thành công');
+
+                } catch (error) {
+                    console.error('Lỗi khi xuất mẫu in:', error);
+                    this.hideLoading();
+                    this.showAlert('error', 'Lỗi xuất mẫu in', error.message || 'Có lỗi xảy ra khi xuất mẫu in.');
+                }
+            }
+
+            // Xuất file Excel
+            // Nhập dữ liệu từ Excel
+            importDataFromExcel() {
+                try {
+                    const jsonDataStr = document.getElementById('importModal').dataset.jsonData;
+                    if (!jsonDataStr) {
+                        throw new Error('Không có dữ liệu để nhập. Vui lòng chọn file lại.');
+                    }
+
+                    this.showLoading('Đang nhập dữ liệu...');
+
+                    const jsonData = JSON.parse(jsonDataStr);
+
+                    // Headers are in the first row
+                    const headers = jsonData[0];
+                    const dataRows = jsonData.slice(1);
+
+                    // Find column indexes based on headers
+                    const colIndexes = {
+                        tenHangHoa: headers.findIndex(h => /tên.*hàng|hàng.*hóa/i.test(h)),
+                        donViTinh: headers.findIndex(h => /đơn.*vị|đơn.*tính/i.test(h)),
+                        soLuong: headers.findIndex(h => /số.*lượng/i.test(h)),
+                        donGia: headers.findIndex(h => /đơn.*giá/i.test(h)),
+                        loaiHangHoa: headers.findIndex(h => /loại.*hàng/i.test(h)),
+                        moTa: headers.findIndex(h => /mô.*tả/i.test(h)),
+                        phuPhi: headers.findIndex(h => /phụ.*phí/i.test(h)),
+                        thueSuat: headers.findIndex(h => /thuế.*suất/i.test(h)),
+                        phiQuanLy: headers.findIndex(h => /phí.*quản/i.test(h)),
+                        tienHoanTra: headers.findIndex(h => /tiền.*hoàn|hoàn.*trả/i.test(h)),
+                        ghiChu: headers.findIndex(h => /ghi.*chú/i.test(h))
+                    };
+
+                    // Check if required columns exist
+                    if (colIndexes.tenHangHoa === -1 || colIndexes.soLuong === -1 || colIndexes.donGia === -1) {
+                        throw new Error('File thiếu các cột bắt buộc (Tên hàng hoá, Số lượng hoặc Đơn giá).');
+                    }
+
+                    // Check if the chiTietSection is hidden and show it
+                    document.getElementById('chiTietSection').classList.remove('hidden');
+
+                    // For statistics
+                    let importCount = 0;
+                    let errorCount = 0;
+
+                    // Add each row to the product table
+                    dataRows.forEach(row => {
+                        try {
+                            // Skip empty rows (check if essential fields are empty)
+                            if (!row[colIndexes.tenHangHoa]) {
+                                return;
+                            }
+
+                            // Get values from row based on column indexes
+                            const getValue = (index, defaultValue) => {
+                                return index !== -1 && row[index] !== undefined ? row[index] : defaultValue;
+                            };
+
+                            const tenHangHoa = getValue(colIndexes.tenHangHoa, '');
+                            const donViTinh = getValue(colIndexes.donViTinh, '');
+                            const soLuong = parseFloat(getValue(colIndexes.soLuong, 1)) || 1;
+                            const donGia = parseFloat(getValue(colIndexes.donGia, 0)) || 0;
+                            const loaiHangHoa = getValue(colIndexes.loaiHangHoa, '');
+                            const moTa = getValue(colIndexes.moTa, '');
+                            const phuPhiDieuChinh = parseFloat(getValue(colIndexes.phuPhi, 0)) || 0;
+                            const thueSuat = parseFloat(getValue(colIndexes.thueSuat, 10)) || 10;
+                            const phiQuanLy = parseFloat(getValue(colIndexes.phiQuanLy, 0)) || 0;
+                            const tienHoanTra = parseFloat(getValue(colIndexes.tienHoanTra, 0)) || 0;
+                            const ghiChu = getValue(colIndexes.ghiChu, '');
+
+                            // Create a new row
+                            const tableBody = document.getElementById('chiTietTableBody');
+                            const newRow = document.createElement('tr');
+                            newRow.classList.add('animate-fade-in');
+
+                            // Set data attributes
+                            newRow.dataset.loaiHangHoa = loaiHangHoa;
+                            newRow.dataset.moTa = moTa;
+                            newRow.dataset.phuPhiDieuChinh = phuPhiDieuChinh;
+                            newRow.dataset.thueSuat = thueSuat;
+                            newRow.dataset.phiQuanLy = phiQuanLy;
+                            newRow.dataset.tienHoanTra = tienHoanTra;
+                            newRow.dataset.ghiChu = ghiChu;
+                            newRow.dataset.thanhTien = '0';
+                            newRow.dataset.thanhTienSauDieuChinh = '0';
+                            newRow.dataset.tienThue = '0';
+                            newRow.dataset.tongGiaTri = '0';
+
+                            // HTML cho hàng mới với dropdown đơn vị tính
+                            newRow.innerHTML = `
+<td class="py-3 px-4 border-b border-gray-200">
+  <button type="button" class="text-blue-600 hover:text-blue-800" onclick="openHangHoaDetail(this)">
+   <i class="fas fa-edit"></i>
+  </button>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Tên hàng hoá" value="${tenHangHoa}" required>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <select class="w-full p-2 border border-gray-300 rounded-lg unit-select">
+    <option value="">-- Chọn --</option>
+    <option value="Chiếc">Chiếc</option>
+    <option value="Tờ">Tờ</option>
+    <option value="Thành phẩm">Thành phẩm</option>
+    <option value="Gói">Gói</option>
+    <option value="Bộ">Bộ</option>
+    <option value="Hộp">Hộp</option>
+    <option value="Tấm">Tấm</option>
+    <option value="Quyển">Quyển</option>
+    <option value="kg">kg</option>
+    <option value="custom">Khác...</option>
+  </select>
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg mt-1 custom-unit hidden" placeholder="Nhập đơn vị tính">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Số lượng" 
+      min="0" step="1" value="${soLuong}">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="number" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Đơn giá" value="${donGia}">
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Thành tiền" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="VAT" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <input type="text" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="Tổng giá trị" readonly>
+</td>
+<td class="py-3 px-4 border-b border-gray-200">
+  <div class="flex space-x-2">
+    <button type="button" class="text-green-500 hover:text-green-700" onclick="copyRow(this)">
+      <i class="fas fa-copy"></i>
+    </button>
+    <button type="button" class="text-red-500 hover:text-red-700" onclick="deleteRow(this)">
+      <i class="fas fa-trash"></i>
+    </button>
+  </div>
+</td>
+`;
+                            tableBody.appendChild(newRow);
+
+                            // Xử lý đơn vị tính trong hàng mới
+                            const unitSelect = newRow.querySelector('.unit-select');
+                            const customUnitInput = newRow.querySelector('.custom-unit');
+
+                            // Tải các tùy chọn đã lưu cho đơn vị tính
+                            try {
+                                const savedUnits = JSON.parse(localStorage.getItem('savedDonViTinh')) || [];
+                                const customOption = Array.from(unitSelect.options).find(opt => opt.value === 'custom');
+                                const customPosition = customOption ?
+                                    Array.from(unitSelect.options).indexOf(customOption) :
+                                    unitSelect.options.length;
+
+                                // Thêm các tùy chọn đã lưu vào dropdown
+                                savedUnits.forEach(unit => {
+                                    if (!Array.from(unitSelect.options).some(opt => opt.value === unit && opt.textContent === unit)) {
+                                        const option = document.createElement('option');
+                                        option.value = unit;
+                                        option.textContent = unit;
+                                        option.classList.add('user-added');
+                                        unitSelect.insertBefore(option, unitSelect.options[customPosition]);
+                                    }
+                                });
+
+                                // Kiểm tra xem giá trị đơn vị tính từ Excel có trùng với bất kỳ tùy chọn nào không
+                                const unitOption = Array.from(unitSelect.options)
+                                    .find(opt => opt.value && opt.value !== 'custom' && opt.textContent === donViTinh);
+
+                                if (unitOption) {
+                                    // Nếu trùng với tùy chọn có sẵn, chọn tùy chọn đó
+                                    unitSelect.value = unitOption.value;
+                                } else if (donViTinh) {
+                                    // Nếu là giá trị mới, thêm vào dropdown và lưu lại
+                                    const option = document.createElement('option');
+                                    option.value = donViTinh;
+                                    option.textContent = donViTinh;
+                                    option.classList.add('user-added');
+                                    unitSelect.insertBefore(option, unitSelect.options[customPosition]);
+
+                                    // Lưu vào localStorage nếu chưa có
+                                    if (!savedUnits.includes(donViTinh)) {
+                                        savedUnits.push(donViTinh);
+                                        localStorage.setItem('savedDonViTinh', JSON.stringify(savedUnits));
+                                    }
+
+                                    // Chọn giá trị mới
+                                    unitSelect.value = donViTinh;
+                                }
+                            } catch (error) {
+                                console.error('Lỗi khi xử lý đơn vị tính:', error);
+                                if (donViTinh) {
+                                    // Nếu có lỗi nhưng có giá trị, sử dụng input tùy chỉnh
+                                    unitSelect.value = 'custom';
+                                    customUnitInput.value = donViTinh;
+                                    customUnitInput.classList.remove('hidden');
+                                }
+                            }
+
+                            // Thêm sự kiện cho các trường input
+                            const rowInputs = newRow.querySelectorAll('input');
+                            rowInputs[2].addEventListener('input', () => this.calculateRowValues(newRow));
+                            rowInputs[3].addEventListener('input', () => this.calculateRowValues(newRow));
+
+                            // Thêm sự kiện cho dropdown đơn vị tính
+                            if (unitSelect) {
+                                unitSelect.addEventListener('change', (e) => {
+                                    if (e.target.value === 'custom') {
+                                        customUnitInput.classList.remove('hidden');
+                                        customUnitInput.focus();
+                                    } else {
+                                        customUnitInput.classList.add('hidden');
+                                        customUnitInput.value = '';
+                                    }
+                                });
+                            }
+
+                            // Thêm sự kiện cho ô input tùy chỉnh
+                            if (customUnitInput && unitSelect) {
+                                customUnitInput.addEventListener('blur', (e) => {
+                                    if (e.target.value && unitSelect.value === 'custom') {
+                                        try {
+                                            // Thêm vào dropdown
+                                            const value = e.target.value;
+                                            const customOption = Array.from(unitSelect.options).find(opt => opt.value === 'custom');
+                                            const customPosition = customOption ?
+                                                Array.from(unitSelect.options).indexOf(customOption) :
+                                                unitSelect.options.length;
+
+                                            // Kiểm tra nếu tùy chọn đã tồn tại
+                                            if (!Array.from(unitSelect.options).some(opt => opt.value === value && opt.textContent === value)) {
+                                                const option = document.createElement('option');
+                                                option.value = value;
+                                                option.textContent = value;
+                                                option.classList.add('user-added');
+                                                unitSelect.insertBefore(option, unitSelect.options[customPosition]);
+
+                                                // Lưu vào localStorage
+                                                const savedUnits = JSON.parse(localStorage.getItem('savedDonViTinh')) || [];
+                                                if (!savedUnits.includes(value)) {
+                                                    savedUnits.push(value);
+                                                    localStorage.setItem('savedDonViTinh', JSON.stringify(savedUnits));
+                                                }
+                                            }
+
+                                            // Chọn tùy chọn mới
+                                            unitSelect.value = value;
+
+                                            // Ẩn ô input tùy chỉnh
+                                            e.target.classList.add('hidden');
+                                        } catch (error) {
+                                            console.error('Lỗi khi thêm đơn vị tính tùy chỉnh:', error);
+                                        }
+                                    }
+                                });
+                            }
+
+                            this.calculateRowValues(newRow);
+                            importCount++;
+                        } catch (rowError) {
+                            console.error('Lỗi nhập dòng:', rowError, row);
+                            errorCount++;
+                        }
+                    });
+
+                    // Update totals and progress
+                    this.updateOrderTotals();
+                    this.updateProgressSteps(2);
+
+                    // Close modal
+                    this.closeImportModal();
+
+                    this.hideLoading();
+
+                    // Show result message
+                    let resultMessage = `Đã nhập ${importCount} sản phẩm từ Excel.`;
+                    if (errorCount > 0) {
+                        resultMessage += ` Bỏ qua ${errorCount} dòng không hợp lệ.`;
+                    }
+
+                    this.showAlert('success', 'Nhập dữ liệu thành công', resultMessage);
+
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Lỗi nhập dữ liệu:', error);
+                    this.showAlert('error', 'Lỗi nhập dữ liệu', error.message || 'Có lỗi xảy ra khi nhập dữ liệu từ Excel.');
+                }
+            }
+
+            // Tạo HTML cho mẫu in
+            generatePrintHTML(orderData, hangHoaItems) {
+                const today = new Date();
+                const formattedDate = this.formatDate(today);
+
+                // Calculate totals
+                let totalQuantity = 0;
+                let totalAmount = 0;
+
+                hangHoaItems.forEach(item => {
+                    totalQuantity += parseFloat(item['Số lượng']) || 0;
+                    totalAmount += parseFloat(item['Tổng giá trị']) || 0;
+                });
+
+                return `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Đơn hàng: ${orderData.maDonHang}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+          border: 1px solid #ddd;
+          padding: 20px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #333;
+        }
+        .header h1 {
+          margin: 0;
+          color: #0284c7;
+        }
+        .info {
+          margin-bottom: 20px;
+        }
+        .info-row {
+          display: flex;
+          margin-bottom: 8px;
+        }
+        .info-label {
+          width: 150px;
+          font-weight: bold;
+        }
+        .info-value {
+          flex: 1;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+        }
+        th, td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+        .total-row {
+          font-weight: bold;
+        }
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 14px;
+          color: #666;
+        }
+        .signatures {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 60px;
+        }
+        .signature {
+          width: 30%;
+          text-align: center;
+        }
+        .signature-line {
+          margin-top: 60px;
+          border-top: 1px solid #333;
+        }
+        @media print {
+          body {
+            padding: 0;
+          }
+          .container {
+            box-shadow: none;
+            border: none;
+          }
+          .no-print {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>ĐƠN HÀNG</h1>
+          <p>Mã đơn hàng: ${orderData.maDonHang}</p>
+        </div>
+        
+        <div class="info">
+          <div class="info-row">
+            <div class="info-label">Tên đơn hàng:</div>
+            <div class="info-value">${orderData.tenDonHang}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Khách hàng:</div>
+            <div class="info-value">${orderData.khachHang}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Ngày đặt hàng:</div>
+            <div class="info-value">${orderData.ngayDatHang}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Ngày in:</div>
+            <div class="info-value">${formattedDate}</div>
+          </div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên hàng hoá</th>
+              <th>Đơn vị</th>
+              <th>Số lượng</th>
+              <th>Đơn giá</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hangHoaItems.map((item, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${item['Tên hàng hoá']}</td>
+                <td>${item['Đơn vị tính']}</td>
+                <td style="text-align: right;">${item['Số lượng']}</td>
+                <td style="text-align: right;">${this.formatCurrency(item['Đơn giá'])}</td>
+                <td style="text-align: right;">${this.formatCurrency(item['Tổng giá trị'])}</td>
+              </tr>
+            `).join('')}
+            <tr class="total-row">
+              <td colspan="3">Tổng cộng</td>
+              <td style="text-align: right;">${totalQuantity}</td>
+              <td></td>
+              <td style="text-align: right;">${this.formatCurrency(totalAmount)}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="info-row">
+          <div class="info-label">Tổng tiền bằng chữ:</div>
+          <div class="info-value">(Đang cập nhật...)</div>
+        </div>
+        
+        <div class="info-row">
+          <div class="info-label">Ghi chú:</div>
+          <div class="info-value">${orderData.ghiChu || ''}</div>
+        </div>
+        
+        <div class="signatures">
+          <div class="signature">
+            <div>Người lập đơn hàng</div>
+            <div class="signature-line"></div>
+          </div>
+          <div class="signature">
+            <div>Xác nhận khách hàng</div>
+            <div class="signature-line"></div>
+          </div>
+          <div class="signature">
+            <div>Quản lý đơn hàng</div>
+            <div class="signature-line"></div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Đơn hàng được tạo tự động từ hệ thống quản lý</p>
+        </div>
+        
+        <div class="no-print" style="margin-top: 20px; text-align: center;">
+          <button onclick="window.print()" style="padding: 10px 20px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            In đơn hàng
+          </button>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+            }
+
+            // HTML cho modal import Excel
+            get importModalHTML() {
+                return `
+    <div id="importModal" class="fixed inset-0 bg-gray-800/70 backdrop-blur-sm z-50 hidden overflow-y-auto">
+      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 sm:p-0">
+        <div class="relative w-full max-w-5xl p-6 mx-auto my-8 bg-white rounded-2xl shadow-xl">
+          <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Nhập chi tiết hàng hóa từ Excel</h3>
+            <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeImportModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-3">
+              Tải lên file Excel (.xlsx, .xls) có chứa dữ liệu hàng hóa. File cần có các cột: TÊN HÀNG HÓA, ĐƠN VỊ TÍNH, SỐ LƯỢNG, ĐƠN GIÁ.
+            </p>
+            
+            <div class="flex gap-3 mb-4">
+              <button id="btnChonFile" class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <i class="fas fa-file-upload"></i>
+                Chọn file
+              </button>
+              
+              <button id="btnTaiMauNhap" class="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50">
+                <i class="fas fa-download"></i>
+                Tải mẫu nhập
+              </button>
+              
+              <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" />
+            </div>
+            
+            <div id="selectedFileInfo" class="text-sm text-gray-600 mb-3 hidden"></div>
+          </div>
+          
+          <div id="previewContainer" class="hidden">
+            <h4 class="font-medium text-gray-800 mb-2">Xem trước dữ liệu (5 dòng đầu tiên):</h4>
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+              <table id="previewTable" class="min-w-full bg-white">
+                <thead id="previewTableHead">
+                  <!-- Headers will be inserted here -->
+                </thead>
+                <tbody id="previewTableBody">
+                  <!-- Data will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+            <button type="button" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300" onclick="closeImportModal()">
+              Hủy
+            </button>
+            <button type="button" id="btnNhapDuLieu" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" disabled>
+              Nhập dữ liệu
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+            }
+        }
+
+        // Thêm đoạn này ngay sau định nghĩa lớp OrderManager
+        class CustomDropdownManager {
+            constructor(selectId, storageKey) {
+                this.selectId = selectId;           // ID của phần tử select
+                this.storageKey = storageKey;       // Khóa để lưu vào localStorage
+                this.selectElement = document.getElementById(selectId);  // Phần tử select
+                this.customInput = document.getElementById(`${selectId}Custom`); // Input để nhập giá trị tùy chỉnh
+                this.init();
+            }
+
+            init() {
+                // Tải các tùy chọn đã lưu trước đó
+                this.loadSavedOptions();
+
+                // Thiết lập sự kiện listener cho việc thêm tùy chọn mới
+                if (this.customInput) {
+                    // Xử lý khi người dùng rời khỏi ô input
+                    this.customInput.addEventListener('blur', (e) => {
+                        if (e.target.value && this.selectElement.value === 'custom') {
+                            this.addCustomOption(e.target.value);
+                        }
+                    });
+
+                    // Xử lý khi người dùng nhấn phím Enter
+                    this.customInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && e.target.value && this.selectElement.value === 'custom') {
+                            e.preventDefault();
+                            this.addCustomOption(e.target.value);
+                            this.selectElement.value = e.target.value;
+                            this.customInput.classList.add('hidden');
+                        }
+                    });
+                }
+            }
+
+            // Thêm nút này vào modal hoặc phần settings
+            resetUserMappings() {
+                Swal.fire({
+                    title: 'Xác nhận reset',
+                    text: 'Bạn có muốn xóa tất cả các ánh xạ Tên-Loại hàng hoá đã học không?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Xóa',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem('userHangHoaMappings');
+                        this.showAlert('success', 'Đã reset!', 'Các ánh xạ đã được xóa thành công.');
+                    }
+                });
+            }
+
+            // Tải các tùy chọn đã lưu từ localStorage
+            loadSavedOptions() {
+                try {
+                    const savedOptions = JSON.parse(localStorage.getItem(this.storageKey)) || [];
+                    const customOptionPosition = this.getCustomOptionPosition();
+
+                    // Xóa các tùy chọn do người dùng thêm trước đó (trừ tùy chọn "custom")
+                    const options = Array.from(this.selectElement.options);
+                    for (let i = options.length - 1; i >= 0; i--) {
+                        if (options[i].classList.contains('user-added') && options[i].value !== 'custom') {
+                            this.selectElement.remove(i);
+                        }
+                    }
+
+                    // Thêm các tùy chọn đã lưu vào trước tùy chọn "custom"
+                    savedOptions.forEach(option => {
+                        if (!this.optionExists(option)) {
+                            const optElement = document.createElement('option');
+                            optElement.value = option;
+                            optElement.textContent = option;
+                            optElement.classList.add('user-added');
+
+                            this.selectElement.insertBefore(optElement, this.selectElement.options[customOptionPosition]);
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Lỗi khi tải tùy chọn đã lưu cho ${this.selectId}:`, error);
+                }
+            }
+
+            // Tìm vị trí của tùy chọn "custom"
+            getCustomOptionPosition() {
+                for (let i = 0; i < this.selectElement.options.length; i++) {
+                    if (this.selectElement.options[i].value === 'custom') {
+                        return i;
+                    }
+                }
+                return this.selectElement.options.length; // Mặc định là cuối danh sách
+            }
+
+            // Kiểm tra xem tùy chọn đã tồn tại chưa
+            optionExists(value) {
+                return Array.from(this.selectElement.options)
+                    .some(opt => opt.value === value && opt.textContent === value);
+            }
+
+            // Thêm tùy chọn mới
+            addCustomOption(value) {
+                if (!value.trim() || this.optionExists(value)) return;
+
+                try {
+                    // Thêm vào dropdown
+                    const customOptionPosition = this.getCustomOptionPosition();
+                    const optElement = document.createElement('option');
+                    optElement.value = value;
+                    optElement.textContent = value;
+                    optElement.classList.add('user-added');
+
+                    this.selectElement.insertBefore(optElement, this.selectElement.options[customOptionPosition]);
+
+                    // Chọn tùy chọn mới
+                    this.selectElement.value = value;
+
+                    // Lưu vào localStorage
+                    const savedOptions = JSON.parse(localStorage.getItem(this.storageKey)) || [];
+                    if (!savedOptions.includes(value)) {
+                        savedOptions.push(value);
+                        localStorage.setItem(this.storageKey, JSON.stringify(savedOptions));
+                    }
+
+                    // Ẩn ô input tùy chỉnh
+                    this.customInput.classList.add('hidden');
+                } catch (error) {
+                    console.error(`Lỗi khi thêm tùy chọn mới cho ${this.selectId}:`, error);
+                }
+            }
+        }
+
+        // Khởi tạo quản lý đơn hàng khi DOM đã được tải
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const orderManager = new OrderManager(appId, accessKey);
+        });
+    </script>
+</body>
+</html>

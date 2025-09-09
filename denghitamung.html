@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đề Nghị Tạm Ứng - Đức Thành</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
+    <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.3;
+            margin: 0;
+            color: #000;
+            font-size: 12pt;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 5px;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .header-table td {
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .header-left {
+            width: 40%;
+            font-weight: bold;
+        }
+
+        .header-right {
+            width: 60%;
+            font-weight: bold;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16pt;
+            margin: 20px 0;
+        }
+
+        .recipient {
+            margin-bottom: 20px;
+        }
+
+        .content-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .content-table th,
+        .content-table td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        .content-table th {
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+
+        .payment-info {
+            margin-bottom: 20px;
+        }
+
+        .signature {
+            text-align: right;
+            margin-top: 40px;
+        }
+
+        .company-info {
+            margin-left: 40px;
+        }
+
+        .print-button-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        #printButton {
+            background-color: #f0a500;
+            border: none;
+            color: #000;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Times New Roman', Times, serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #printButton:hover {
+            background-color: #d89400;
+        }
+
+        #exportButton {
+            background-color: #2b579a;
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Times New Roman', Times, serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #exportButton:hover {
+            background-color: #1e3f6f;
+        }
+
+        #excelButton {
+            background-color: #217346;
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Times New Roman', Times, serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #excelButton:hover {
+            background-color: #1e5e3a;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+            text-align: center;
+            padding-top: 200px;
+        }
+
+        #error-message {
+            display: none;
+            color: red;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @media print {
+            .print-button-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">Đang tải dữ liệu...</div>
+    <div id="error-message"></div>
+
+    <div class="print-button-container">
+        <button id="printButton" onclick="window.print()">
+            <i class="fas fa-print"></i> In đề nghị
+        </button>
+        <button id="excelButton" onclick="exportToExcelTemplate()">
+            <i class="fas fa-file-excel"></i> Xuất Excel
+        </button>
+        <button id="exportButton" onclick="exportToWordTemplate()">
+            <i class="fas fa-file-word"></i> Xuất Word
+        </button>
+    </div>
+
+    <div class="container">
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    <div>CÔNG TY TNHH SẢN XUẤT</div>
+                    <div>VÀ DỊCH VỤ ĐỨC THÀNH</div>
+                </td>
+                <td class="header-right">
+                    <div>CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                    <div>Độc lập - Tự do - Hạnh phúc</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="title">ĐỀ NGHỊ TẠM ỨNG</div>
+
+        <div class="recipient">
+            <strong>Kính gửi: </strong><span id="customer-name">Quý khách hàng</span>
+        </div>
+
+        <div>Xin vui lòng thanh toán vào thông tin tài khoản bên dưới theo nội dung sau:</div>
+
+        <table class="content-table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Nội dung thanh toán</th>
+                    <th>Số tiền (VNĐ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="text-align: center;">1</td>
+                    <td>Tạm ứng 50% tiền in ấn sản phẩm</td>
+                    <td style="text-align: right;" id="amount">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="payment-info">
+            <div>CÔNG TY TNHH SẢN XUẤT VÀ DỊCH VỤ ĐỨC THÀNH đề nghị Quý Công ty thanh toán số tiền theo bản thanh toán.
+                <strong>Tổng giá trị: <span id="total-amount">0</span> vnđ</strong> (Bằng chữ: <span
+                    id="amount-in-words">Không đồng</span>)
+            </div>
+            <br>
+            <div>Tài khoản nhận tiền:</div>
+            <div class="company-info">
+                <div>- Tên thụ hưởng: Công Ty TNHH Sản Xuất Và Dịch Vụ Đức Thành</div>
+                <div>- Số tài khoản: 156939258 tại ngân hàng VP Bank - Chi nhánh Thăng Long.</div>
+            </div>
+            <br>
+            <div>Trân trọng cảm ơn!</div>
+        </div>
+
+        <div class="signature">
+            <div>Hà Nội, Ngày <span id="current-day">...</span> tháng <span id="current-month">...</span> năm <span
+                    id="current-year">...</span></div>
+            <div><strong>ĐẠI DIỆN CÔNG TY</strong></div>
+        </div>
+    </div>
+
+    <!-- Thêm vào phần head, sau các script hiện có -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+
+    <script src="https://hoangmv.github.io/ducthanh/key.js"></script>
+    <script>
+
+
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Function to format number as currency
+        function formatCurrency(number) {
+            return number.toLocaleString('vi-VN');
+        }
+
+        // Function to format date to Vietnamese format
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/');
+        }
+
+        // Function to convert number to Vietnamese words
+        function numberToWords(num) {
+            const units = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+            const tens = ['', 'mười', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
+            const scales = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ'];
+
+            if (num === 0) return 'không';
+
+            let words = '';
+            let scaleIndex = 0;
+
+            while (num > 0) {
+                const hundreds = Math.floor(num % 1000 / 100);
+                const ten = Math.floor(num % 100 / 10);
+                const unit = num % 10;
+
+                let scaleWords = '';
+
+                if (hundreds > 0) {
+                    scaleWords += units[hundreds] + ' trăm ';
+                }
+
+                if (ten > 1) {
+                    scaleWords += tens[ten] + ' ';
+                    if (unit > 0) {
+                        scaleWords += (unit === 1 && ten > 1) ? 'mốt' : units[unit];
+                    }
+                } else if (ten === 1) {
+                    scaleWords += 'mười ';
+                    if (unit > 0) {
+                        scaleWords += (unit === 5) ? 'lăm' : units[unit];
+                    }
+                } else if (unit > 0) {
+                    scaleWords += units[unit];
+                }
+
+                if (scaleWords) {
+                    words = scaleWords + (scaleIndex > 0 ? ' ' + scales[scaleIndex] + ' ' : '') + words;
+                }
+
+                num = Math.floor(num / 1000);
+                scaleIndex++;
+            }
+
+            // Viết hoa chữ cái đầu tiên
+            words = words.trim();
+            return words.charAt(0).toUpperCase() + words.slice(1) + ' đồng';
+        }
+
+        // Function to fetch specific order by ID from AppSheet
+        async function fetchOrderById(orderId) {
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error-message');
+
+            loadingElement.style.display = 'block';
+            errorElement.style.display = 'none';
+
+            try {
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/Đơn hàng/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Action: 'Find',
+                        Properties: {
+                            Selector: `Filter(Đơn hàng, [ID đơn hàng] = "${orderId}")`
+                        },
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                loadingElement.style.display = 'none';
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid data format received');
+                }
+
+                // Tìm đơn hàng có ID chính xác
+                const exactOrder = data.find(order => order['ID đơn hàng'] === orderId);
+
+                if (!exactOrder) {
+                    throw new Error(`Không tìm thấy đơn hàng với mã: ${orderId}`);
+                }
+
+                return exactOrder; // Trả về đơn hàng chính xác
+            } catch (error) {
+                console.error('Failed to fetch order data:', error);
+                loadingElement.style.display = 'none';
+                errorElement.textContent = error.message || 'Có lỗi xảy ra khi tải dữ liệu đơn hàng.';
+                errorElement.style.display = 'block';
+                throw error;
+            }
+        }
+
+        // Thêm hàm mới để lấy thông tin khách hàng theo ID
+        async function fetchCustomerById(customerId) {
+            try {
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/Khách hàng/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Action: 'Find',
+                        Properties: {
+                            Selector: `Filter(Khách hàng, [ID khách hàng] = "${customerId}")`
+                        },
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid data format received');
+                }
+
+                // Tìm khách hàng có ID chính xác
+                const exactCustomer = data.find(customer => customer['ID khách hàng'] === customerId);
+
+                if (!exactCustomer) {
+                    throw new Error(`Không tìm thấy khách hàng với ID: ${customerId}`);
+                }
+
+                return exactCustomer; // Trả về khách hàng chính xác
+            } catch (error) {
+                console.error('Failed to fetch customer data:', error);
+                throw error;
+            }
+        }
+
+        // Hàm tính tạm ứng 50% từ đơn hàng
+        async function calculateAdvancePayment(orderId) {
+            try {
+                // Lấy thông tin đơn hàng
+                const order = await fetchOrderById(orderId);
+
+                // Tính tổng giá trị đơn hàng (giả sử có trường tổng tiền)
+                const totalValue = parseFloat(order['Tổng giá trị đơn'] || 0);
+
+                // Tính 50% tạm ứng
+                const advanceAmount = totalValue * 0.5;
+
+                return {
+                    customerId: order['ID khách hàng'],
+                    orderNumber: order['Mã đơn hàng'] || '',
+                    totalValue: totalValue,
+                    advanceAmount: advanceAmount
+                };
+            } catch (error) {
+                console.error('Error calculating advance payment:', error);
+                throw error;
+            }
+        }
+
+        // Hàm hiển thị thông tin đề nghị tạm ứng
+        async function displayAdvanceRequestData(orderId) {
+            try {
+                // Tính số tiền tạm ứng từ đơn hàng
+                const paymentData = await calculateAdvancePayment(orderId);
+
+                // Lấy thông tin khách hàng
+                const customer = await fetchCustomerById(paymentData.customerId);
+
+                // Cập nhật tên khách hàng
+                document.getElementById('customer-name').textContent = customer['Tên khách hàng đầy đủ'] || 'Quý khách hàng';
+
+                // Cập nhật số tiền
+                const formattedAmount = formatCurrency(paymentData.advanceAmount);
+                document.getElementById('amount').textContent = formattedAmount;
+                document.getElementById('total-amount').textContent = formattedAmount;
+
+                // Cập nhật số tiền bằng chữ
+                document.getElementById('amount-in-words').textContent = numberToWords(Math.round(paymentData.advanceAmount));
+
+                // Cập nhật ngày tháng hiện tại
+                const currentDate = new Date();
+                document.getElementById('current-day').textContent = currentDate.getDate();
+                document.getElementById('current-month').textContent = currentDate.getMonth() + 1;
+                document.getElementById('current-year').textContent = currentDate.getFullYear();
+
+            } catch (error) {
+                console.error('Error displaying advance request data:', error);
+                document.getElementById('error-message').textContent = 'Lỗi hiển thị dữ liệu đề nghị tạm ứng: ' + error.message;
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+
+        // Hàm xuất file Word
+        async function exportToWordTemplate() {
+            try {
+                // Hiển thị loading
+                document.getElementById('loading').style.display = 'block';
+
+                // Lấy order ID từ tham số URL để dùng trong tên file
+                const orderId = getUrlParameter('id');
+
+                // Lấy đơn hàng để lấy mã đơn hàng (orderNumber)
+                const order = await fetchOrderById(orderId);
+                const orderNumber = order['Mã đơn hàng'] || orderId;
+
+                // Lấy dữ liệu hiện tại trên form
+                const customerName = document.getElementById('customer-name').textContent;
+                const amount = document.getElementById('amount').textContent;
+                const totalAmount = document.getElementById('total-amount').textContent;
+                const amountInWords = document.getElementById('amount-in-words').textContent;
+
+                const currentDate = new Date();
+                const day = currentDate.getDate();
+                const month = currentDate.getMonth() + 1;
+                const year = currentDate.getFullYear();
+
+                // Tạo dữ liệu để điền vào template
+                const data = {
+                    customer_name: customerName,
+                    amount: amount,
+                    total_amount: totalAmount,
+                    amount_in_words: amountInWords,
+                    day: day,
+                    month: month,
+                    year: year
+                };
+
+                // Load template từ server
+                const response = await fetch('https://hoangmv.github.io/templates/denghitamung_template.docx');
+                if (!response.ok) {
+                    throw new Error('Không thể tải template Word');
+                }
+                const templateContent = await response.arrayBuffer();
+
+                // Tạo document từ template
+                const zip = new PizZip(templateContent);
+                const doc = new window.docxtemplater(zip, {
+                    paragraphLoop: true,
+                    linebreaks: true
+                });
+
+                // Render template với dữ liệu
+                doc.setData(data);
+                doc.render();
+
+                // Tạo và tải file
+                const blob = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+
+                const fileName = `De_nghi_tam_ung_${orderNumber}.docx`;
+                saveAs(blob, fileName);
+
+            } catch (error) {
+                console.error('Error exporting to Word:', error);
+                document.getElementById('error-message').textContent = 'Lỗi khi xuất file Word: ' + error.message;
+                document.getElementById('error-message').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Thêm hàm applyTimesNewRoman
+        function applyTimesNewRoman(cell, isBold = false, fontSize = 12) {
+            cell.font = {
+                name: 'Times New Roman',
+                bold: isBold,
+                size: fontSize
+            };
+            cell.alignment = {
+                vertical: 'middle',
+                wrapText: true
+            };
+        }
+
+        async function exportToExcelTemplate() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+
+                // Lấy dữ liệu
+                const orderId = getUrlParameter('id');
+                const order = await fetchOrderById(orderId);
+                const orderNumber = order['Mã đơn hàng'] || orderId;
+
+                const customerName = document.getElementById('customer-name').textContent;
+                const amount = document.getElementById('amount').textContent.replace(/[,.]/g, '');
+                const amountInWords = document.getElementById('amount-in-words').textContent;
+
+                const currentDate = new Date();
+                const day = currentDate.getDate();
+                const month = currentDate.getMonth() + 1;
+                const year = currentDate.getFullYear();
+
+                // Tạo workbook và worksheet mới
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = 'Đức Thành';
+                workbook.lastModifiedBy = 'Đức Thành';
+
+                const worksheet = workbook.addWorksheet('Đề nghị tạm ứng');
+
+                // Đặt chiều rộng cột
+                worksheet.columns = [
+                    { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 },
+                    { width: 12 }, { width: 12 }, { width: 12 }, { width: 12 }
+                ];
+
+                // Thêm dữ liệu và định dạng
+                // Header
+                worksheet.mergeCells('A1:C1');
+                worksheet.getCell('A1').value = 'CÔNG TY TNHH SẢN XUẤT';
+                applyTimesNewRoman(worksheet.getCell('A1'), true, 12);
+
+                worksheet.mergeCells('E1:H1');
+                worksheet.getCell('E1').value = 'CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM';
+                applyTimesNewRoman(worksheet.getCell('E1'), true, 12);
+                worksheet.getCell('E1').alignment = { horizontal: 'center' };
+
+                worksheet.mergeCells('A2:C2');
+                worksheet.getCell('A2').value = 'VÀ DỊCH VỤ ĐỨC THÀNH';
+                applyTimesNewRoman(worksheet.getCell('A2'), true, 12);
+
+                worksheet.mergeCells('E2:H2');
+                worksheet.getCell('E2').value = 'Độc lập - Tự do - Hạnh phúc';
+                applyTimesNewRoman(worksheet.getCell('E2'), true, 12);
+                worksheet.getCell('E2').alignment = { horizontal: 'center' };
+
+                // Tiêu đề
+                worksheet.mergeCells('C4:F4');
+                worksheet.getCell('C4').value = 'ĐỀ NGHỊ TẠM ỨNG';
+                applyTimesNewRoman(worksheet.getCell('C4'), true, 16);
+                worksheet.getCell('C4').alignment = { horizontal: 'center' };
+
+                // Kính gửi
+                worksheet.getCell('A5').value = 'Kính gửi:';
+                applyTimesNewRoman(worksheet.getCell('A5'), true, 12);
+
+                worksheet.mergeCells('B5:H5');
+                worksheet.getCell('B5').value = customerName;
+                applyTimesNewRoman(worksheet.getCell('B5'), false, 12);
+
+                // Nội dung
+                worksheet.mergeCells('A6:H6');
+                worksheet.getCell('A6').value = 'Công Ty TNHH Sản Xuất Và Dịch Vụ Đức Thành xin gửi đến Quý Công ty lời chào trân trọng.';
+                applyTimesNewRoman(worksheet.getCell('A6'), false, 12);
+
+                worksheet.mergeCells('A7:H7');
+                worksheet.getCell('A7').value = 'Căn cứ Hợp đồng/Đơn hàng số: ... ký kết ngày ... giữa các bên, Công Ty TNHH Sản Xuất Và Dịch Vụ';
+                applyTimesNewRoman(worksheet.getCell('A7'), false, 12);
+
+                worksheet.mergeCells('A8:H8');
+                worksheet.getCell('A8').value = 'Đức Thành xin thông báo và đề nghị Công ty ... thanh toán tạm ứng theo quy định tại Hợp đồng/Đơn hàng';
+                applyTimesNewRoman(worksheet.getCell('A8'), false, 12);
+
+                worksheet.mergeCells('A9:H9');
+                worksheet.getCell('A9').value = 'cụ thể như sau:';
+                applyTimesNewRoman(worksheet.getCell('A9'), false, 12);
+
+                // Số tiền
+                worksheet.getCell('A10').value = '1. Số tiền tạm ứng là:';
+                applyTimesNewRoman(worksheet.getCell('A10'), false, 12);
+
+                worksheet.getCell('B10').value = formatCurrency(parseFloat(amount));
+                applyTimesNewRoman(worksheet.getCell('B10'), true, 12);
+
+                worksheet.getCell('C10').value = 'VNĐ';
+                applyTimesNewRoman(worksheet.getCell('C10'), true, 12);
+
+                worksheet.mergeCells('D10:H10');
+                worksheet.getCell('D10').value = ',tương ứng 50% giá trị Hợp đồng/Đơn hàng';
+                applyTimesNewRoman(worksheet.getCell('D10'), false, 12);
+
+                // Bằng chữ
+                worksheet.getCell('A11').value = 'Bằng chữ:';
+                applyTimesNewRoman(worksheet.getCell('A11'), false, 12);
+
+                worksheet.mergeCells('B11:H11');
+                worksheet.getCell('B11').value = amountInWords;
+                applyTimesNewRoman(worksheet.getCell('B11'), true, 12);
+
+                // Phương thức thanh toán
+                worksheet.mergeCells('A12:H12');
+                worksheet.getCell('A12').value = '2. Phương thức thanh toán: Chuyển khoản vào';
+                applyTimesNewRoman(worksheet.getCell('A12'), false, 12);
+
+                worksheet.mergeCells('A13:H13');
+                worksheet.getCell('A13').value = 'Số tài khoản: 156939258 tại Ngân hàng VPBank - CN Thăng Long';
+                applyTimesNewRoman(worksheet.getCell('A13'), true, 12);
+
+                worksheet.mergeCells('A14:H14');
+                worksheet.getCell('A14').value = 'Chủ tài khoản: Công Ty TNHH Sản Xuất Và Dịch Vụ Đức Thành (DUC THANH SERPRO)';
+                applyTimesNewRoman(worksheet.getCell('A14'), true, 12);
+
+                // Thời hạn thanh toán
+                worksheet.mergeCells('A15:H15');
+                worksheet.getCell('A15').value = '3. Thời hạn thanh toán: Ngày sau khi hai bên chốt file thiết kế chuẩn và trước khi bắt đầu sản xuất theo Hợp';
+                applyTimesNewRoman(worksheet.getCell('A15'), false, 12);
+
+                worksheet.mergeCells('A16:H16');
+                worksheet.getCell('A16').value = 'đồng/Đơn hàng';
+                applyTimesNewRoman(worksheet.getCell('A16'), false, 12);
+
+                // Lời chào
+                worksheet.mergeCells('A17:H17');
+                worksheet.getCell('A17').value = 'Công Ty TNHH Sản Xuất Và Dịch Vụ Đức Thành xin cảm ơn sự tin tưởng của Quý Công ty và rất mong';
+                applyTimesNewRoman(worksheet.getCell('A17'), false, 12);
+
+                worksheet.mergeCells('A18:H18');
+                worksheet.getCell('A18').value = 'được hợp tác lâu dài với Quý Công ty.';
+                applyTimesNewRoman(worksheet.getCell('A18'), false, 12);
+
+                worksheet.mergeCells('A19:H19');
+                worksheet.getCell('A19').value = 'Trân trọng!';
+                applyTimesNewRoman(worksheet.getCell('A19'), false, 12);
+
+                // Chữ ký
+                worksheet.mergeCells('F21:H21');
+                worksheet.getCell('F21').value = `Hà Nội, Ngày ….. tháng …. năm ….`;
+                applyTimesNewRoman(worksheet.getCell('F21'), false, 12);
+                worksheet.getCell('F21').alignment = { horizontal: 'center' };
+
+                worksheet.mergeCells('F22:H22');
+                worksheet.getCell('F22').value = 'ĐẠI DIỆN CÔNG TY';
+                applyTimesNewRoman(worksheet.getCell('F22'), true, 12);
+                worksheet.getCell('F22').alignment = { horizontal: 'center' };
+
+                // Xuất file
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const fileName = `De_nghi_tam_ung_${orderNumber}.xlsx`;
+                saveAs(blob, fileName);
+
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                document.getElementById('error-message').textContent = 'Lỗi khi xuất file Excel: ' + error.message;
+                document.getElementById('error-message').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Khởi tạo trang
+        async function initializePage() {
+            // Lấy order ID từ tham số URL
+            const orderId = getUrlParameter('id');
+
+            if (!orderId) {
+                document.getElementById('error-message').textContent = 'Không tìm thấy mã đơn hàng trong URL. Vui lòng kiểm tra lại đường dẫn.';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            try {
+                // Hiển thị dữ liệu đề nghị tạm ứng
+                await displayAdvanceRequestData(orderId);
+            } catch (error) {
+                console.error('Failed to initialize page:', error);
+                document.getElementById('error-message').textContent = 'Không thể tải dữ liệu đơn hàng. Vui lòng thử lại sau.';
+                document.getElementById('error-message').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Chạy khi tài liệu đã tải xong
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+
+</html>
