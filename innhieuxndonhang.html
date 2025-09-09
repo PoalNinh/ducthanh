@@ -186,7 +186,7 @@
     <div id="printContent" class="print-content ml-80">
         <!-- Nội dung xác nhận đặt hàng sẽ được thêm vào đây -->
     </div>
-    <script src="https://hoangmv.github.io/ducthanh/key.js"></script>
+    <script src="https://poalninh.github.io/ducthanh/key.js"></script>
     <script>
         let appData = {
             orders: [],
@@ -650,7 +650,7 @@
                 <!-- Header -->
                 <div style="display: flex; align-items: center; margin-bottom: 10px;">
                     <div style="width: 25%;">
-                        <img src="https://hoangmv.github.io/ducthanh/ducthanhlogo.png" alt="DUC THANH" style="max-width: 150px;">
+                        <img src="https://poalninh.github.io/ducthanh/ducthanhlogo.png" alt="DUC THANH" style="max-width: 150px;">
                     </div>
                     <div style="width: 75%; text-align: right; font-size: 11pt; line-height: 1.4;">
                         <div style="font-weight: bold; font-size: 12pt;">CÔNG TY TNHH SẢN XUẤT VÀ DỊCH VỤ ĐỨC THÀNH</div>
@@ -865,7 +865,7 @@ async function exportSingleOrderToExcel(order) {
         const worksheet = workbook.addWorksheet('Xác nhận đặt hàng');
 
         // Tải logo từ URL
-        const logoResponse = await fetch('https://hoangmv.github.io/ducthanh/ducthanhlogo.png');
+        const logoResponse = await fetch('https://poalninh.github.io/ducthanh/ducthanhlogo.png');
         const logoArrayBuffer = await logoResponse.arrayBuffer();
 
         // Thêm logo vào worksheet
@@ -1175,7 +1175,7 @@ async function exportMultipleOrdersToExcel(orders) {
         const workbook = new ExcelJS.Workbook();
         
         // Tải logo cho mỗi sheet
-        const logoResponse = await fetch('https://hoangmv.github.io/ducthanh/ducthanhlogo.png');
+        const logoResponse = await fetch('https://poalninh.github.io/ducthanh/ducthanhlogo.png');
         const logoArrayBuffer = await logoResponse.arrayBuffer();
         
         // Thêm logo vào workbook
@@ -1530,7 +1530,7 @@ async function exportMultipleOrdersToExcel(orders) {
                 );
 
                 // Tải template từ server
-                const response = await fetch('https://hoangmv.github.io/templates/order_template.docx');
+                const response = await fetch('https://poalninh.github.io/templates/order_template.docx');
                 if (!response.ok) {
                     throw new Error('Không thể tải template Word');
                 }
